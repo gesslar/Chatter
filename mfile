@@ -2,7 +2,7 @@
        "package": "ThreshChat",
        "title": "Manage messages on channels in a separate window",
        "description": "",
-       "version": "1.0.0",
+       "version": "1.0.1",
        "author": "Gesslar@ThresholdRPG",
        "icon": "griffon-right.jpg",
        "dependencies": "",

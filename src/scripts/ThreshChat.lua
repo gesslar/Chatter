@@ -63,7 +63,6 @@ function ThreshChat:GetGroups(channel)
 end
 
 function ThreshChat:ReceiveComm(event)
-    display(event)
     local channel = gmcp.Comm.Channel.Text.channel
     local talker = gmcp.Comm.Channel.Text.talker
     local text = gmcp.Comm.Channel.Text.text
@@ -90,7 +89,7 @@ function ThreshChat:addWidget(name, widget)
     self.widget[name] = widget
 end
 
-function ThreshChat:buildUi()
+function ThreshChat:BuildUI()
     self.MainWindow = self.MainWindow or
     Geyser.UserWindow:new({name = "ThreshChat.MainWindow", padding = 0, titleText = "ThreshChat - " .. getProfileName()})
     self:addWidget(self.MainWindow)
@@ -147,10 +146,15 @@ end
 
 function ThreshChat:DismantleUI()
     for k, v in pairs(self.widget) do
-        if v and v ~= nil then
-            v:hide()
-            v = nil
+        if k[v] ~= nil then
+            k[v]:hide()
+            k[v] = nil
         end
+    end
+    self.widget = {}
+    if self.MainWindow then
+        self.MainWindow:hide()
+        self.MainWindow = nil
     end
 end
 
@@ -212,7 +216,7 @@ function ThreshChat:Uninstall(event, package)
 end
 
 function ThreshChat:Start()
-    self:buildUi()
+    self:BuildUI()
     self:RegisterEventHandlers()
     registerNamedEventHandler("ThreshChat", "ThreshChat.ConnectionScript", "sysConnectionEvent", function() self:ConnectionScript() end)
     registerNamedEventHandler("ThreshChat", "ThreshChat.Install", "sysInstallPackage", function(event,package,file) self:Install(event,package,file) end)
