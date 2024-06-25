@@ -175,7 +175,7 @@ end
 -- Event Handlers
 -- Register/Deregister event handlers
 function ThreshChat:RegisterEventHandlers()
-    registerNamedEventHandler(self.AppName, "ThreshChat:ReceiveComm", "gmcp.Comm.Channel.Text", function(event, handlerName) self:ReceiveComm(event, handlerName) end)
+    registerNamedEventHandler(self.AppName, "ThreshChat:ReceiveComm", "gmcp.Comm.Channel.Text", function(event) self:ReceiveComm(event) end)
 end
 
 function ThreshChat:UnregisterEventHandlers()
