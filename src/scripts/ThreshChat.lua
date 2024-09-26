@@ -27,12 +27,31 @@ ThreshChat.Groups = ThreshChat.Groups or {
     sports = "ooc",
     trivia = "ooc",
 }
+
+-- Styles
+local MainBGColour = "rgba(15, 15, 15, 1)"
+local Center = f[[ qproperty-alignment: 'AlignCenter | AlignVCenter'; ]]; -- Center text
+local Normal = f[[ font-weight: normal; ]]; -- Normal text
+local Bold = f[[ font-weight: bold; ]]; -- Bold text
+local LabelBG = f[[ background-color: {MainBGColour}; ]]
+
 ThreshChat.Styles = {
     Tabs = {
-        selected = f[[ border-bottom: 2px solid #9a9aff; border-radius: 3px; background-color: #202020; ]],
-        unselected = f[[ border-bottom: 2px solid #202020; border-radius: 3px; background-color: #202020; ]],
+        selected = f[[ {LabelBG} {Center} {Bold} text-decoration: underline; text-decoration-color: red; ]],
+        unselected = f[[ {LabelBG} {Center} {Normal}]],
+        -- selected = f[[ border-bottom: 2px solid #9a9aff; border-radius: 3px; background-color: #202020; ]],
+        -- unselected = f[[ border-bottom: 2px solid #202020; border-radius: 3px; background-color: #202020; ]],
     },
-    console = f[[ padding: 2px; ]]
+    Console = {
+        backgroundColor = f[[ ]],
+    }
+}
+
+-- Metrics
+ThreshChat.Metrics = {
+    Tabs = {
+        height = 25,
+    }
 }
 
 -- Utility Functions
@@ -46,6 +65,7 @@ end
 function ThreshChat:StripLineBreaks(x)
     local result, count = string.gsub(x, "%c+%s*", " ")
     result, count = string.gsub(result, "%s*$", "")
+    display(result)
     return result
 end
 
@@ -66,15 +86,17 @@ function ThreshChat:ReceiveComm(event)
     local channel = gmcp.Comm.Channel.Text.channel
     local talker = gmcp.Comm.Channel.Text.talker
     local text = gmcp.Comm.Channel.Text.text
+    local last
 
-    text = ansi2decho(text)
+    text, last = ansi2decho(text)
     text = self:StripLineBreaks(text)
     text = "<128,128,128>○ " .. text .. "\n"
     local groups = self:GetGroups(channel)
     self:Echo(groups, text)
+    decho("<128,128,128>○ " .. text .. "\n")
+    display(last)
 end
 
--- GUI - This is the main window for the extension
 function ThreshChat:addWidget(name, widget)
     if self.widget == nil then
         self.widget = {}
@@ -90,53 +112,62 @@ function ThreshChat:addWidget(name, widget)
 end
 
 function ThreshChat:BuildUI()
-    self.MainWindow = self.MainWindow or
-    Geyser.UserWindow:new({name = "ThreshChat.MainWindow", padding = 0, titleText = "ThreshChat - " .. getProfileName()})
+    self.MainWindow = self.MainWindow or Geyser.UserWindow:new({
+        name = "ThreshChat.MainWindow",
+        x = 1200,
+        padding = 0,
+        titleText = "ThreshChat - " .. getProfileName()
+    })
     self:addWidget(self.MainWindow)
     self.MainWindow:show()
 
     -- This is the container that holds all of the widgets
-    self.Container = self.Container or
-    Geyser.Container:new(
-        {name = "ThreshChat.Container", x = "0%", y = "0%", width = "100%", height = "100%"},
-        self.MainWindow
-    )
-    self:addWidget(self.Container.name, self.Container)
+    self.HeaderLabel = self.HeaderLabel or Geyser.Label:new({
+        name = "ThreshChat.HeaderLabel",
+        x = "0%", y = "0%",
+        width = "100%", height = "100%"
+    }, self.MainWindow)
+    self:addWidget(self.HeaderLabel.name, self.HeaderLabel)
 
     -- This is the header that contains all of the "tabs"
-    self.Header = self.Header or
-    Geyser.HBox:new(
-        {name = "ThreshChat.Header", x = 0, y = 0, width = "100%", height = 50},
-        self.Container
-    )
+    self.Header = self.Header or Geyser.HBox:new({
+        name = "ThreshChat.Header",
+        x = 0, y = 0,
+        width = "100%", height = self.Metrics.Tabs.height
+    }, self.HeaderLabel)
     self:addWidget(self.Header.name, self.Header)
 
     -- This a label that contains all of the miniconsoles
-    self.Body = self.Body or
-    Geyser.Label:new(
-        {name = "ThreshChat.Body", x = 0, y = 50, width = "100%", height = "100%-50"},
-        self.Container
-    )
+    self.Body = self.Body or Geyser.Label:new({
+        name = "ThreshChat.Body",
+        x = 0, y = self.Metrics.Tabs.height,
+        width = "100%",
+        height = f"100%-{self.Metrics.Tabs.height}"
+    }, self.HeaderLabel)
     self:addWidget(self.Body.name, self.Body)
 
     -- Add the tabs
     self.Tabs = self.Tabs or {}
     for k, v in pairs(self.Categories) do
         self.Tabs[v] = self.Tabs[v] or {}
-        self.Tabs[v]["tab"] = Geyser.Label:new({name = "ThreshChat.Tabs." .. v}, self.Header)
-        self:addWidget(self.Tabs[v]["tab"].name, self.Tabs[v]["tab"])
-
-        self.Tabs[v]["tab"]:echo("<center>" .. self:Capitalize(v))
+        self.Tabs[v]["tab"] = Geyser.Label:new({
+            name = "ThreshChat.Tabs." .. v,
+            message = self:Capitalize(v),
+            stylesheet = self.Styles.Tabs.unselected,
+        }, self.Header)
+        self.Tabs[v]["tab"]:echo(nil, "nocolor", nil) -- This is a hack to get the label to display properly
         self.Tabs[v]["tab"]:setClickCallback("ThreshChat:Click", v)
-        self.Tabs[v]["tab"]:setStyleSheet(self.Styles.Tabs.unselected)
+        self:addWidget(self.Tabs[v]["tab"].name, self.Tabs[v]["tab"])
 
         self.Tabs[v]["console"] = self.Tabs[v]["console"] or
         Geyser.MiniConsole:new({
-            x = 3, y = 3, width = "100%-3", height = "100%-3",
+            x = 0, y = 0, width = "100%", height = "100%",
             autoWrap = true,
             scrollBar = true,
-            fontSize = 11,
+            fontSize = 9,
         }, self.Body)
+        self.Tabs[v]["console"]:setBackgroundImage(self.Styles.Console.backgroundColor, 4)
+
         self:addWidget(self.Tabs[v]["console"].name, self.Tabs[v]["console"])
 
         self.Tabs[v]["console"]:hide()
@@ -159,6 +190,7 @@ function ThreshChat:DismantleUI()
 end
 
 function ThreshChat:Click(tab)
+    display(tab)
     self.Tabs[self.Current]["console"]:hide()
     self.Tabs[self.Current]["tab"]:setStyleSheet(self.Styles.Tabs.unselected)
     self.Current = tab
