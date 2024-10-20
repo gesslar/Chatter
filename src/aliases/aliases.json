@@ -1,0 +1,6 @@
+[
+  {
+    "name" : "Chatter",
+    "regex" : "^chatter(?:\\s+(.+))?$"
+  }
+]

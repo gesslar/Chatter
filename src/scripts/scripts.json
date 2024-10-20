@@ -1,8 +1,8 @@
 [
-       {
-              "isActive": "yes",
-              "isFolder": "no",
-              "name": "ThreshChat",
-              "script": ""
-       }
+  {
+    "isActive": "yes",
+    "isFolder": "no",
+    "name": "Chatter",
+    "script": ""
+  }
 ]
