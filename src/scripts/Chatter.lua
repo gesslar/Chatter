@@ -41,35 +41,6 @@ Chatter.glu = Chatter.glu or
               require("__PKGNAME__/Glu/glu").
               new("__PKGNAME__", "Glu")
 
--- Chatter.glu = Glu.new(Chatter.config.package_name)
-
---[[
-Chatter.Groups = Chatter.Groups or {
-  -- say
-  bloodoath = "say",
-  mindlink = "say",
-  party = "say",
-  rsay = "say",
-  say = "say",
-  tell = "say",
-  whisper = "say",
-  -- org
-  clan = "org",
-  guild = "org",
-  lodge = "org",
-  religion = "org",
-  -- question
-  heritage = "question",
-  question = "question",
-  -- ooc
-  citizen = "ooc",
-  court = "ooc",
-  politics = "ooc",
-  sports = "ooc",
-  trivia = "ooc",
-}
-]]--
-
 -- Channel management
 function Chatter.receiveComm(event)
   local channel = gmcp.Comm.Channel.Text.channel
