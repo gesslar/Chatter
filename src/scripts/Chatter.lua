@@ -15,9 +15,6 @@ Chatter = Chatter or {
     },
     dependencies = {
       { name = "Helper", url = "https://github.com/gesslar/Helper/releases/latest/download/Helper.mpackage" },
-      -- { name = "ThreshCopy", url = "https://github.com/gesslar/ThreshCopy/releases/latest/download/ThreshCopy.mpackage" },
-      -- { name = "ThreshBeep", url = "https://github.com/gesslar/ThreshBeep/releases/latest/download/ThreshBeep.mpackage" },
-      -- { name = "ThreshURL", url = "https://github.com/gesslar/ThreshURL/releases/latest/download/ThreshURL.mpackage" },
     },
     category = {
       type = {
