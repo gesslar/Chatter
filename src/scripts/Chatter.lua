@@ -764,7 +764,11 @@ function Chatter.start(event, package)
     Chatter.config.dependencies,
     function(status, message)
       if not status then
-        cecho(f"<red>{message}\n")
+        if message then
+          cecho(f"<red>{message}\n")
+        else
+          cecho(f"<red>Failed to load dependencies for {Chatter.config.package_name}\n")
+        end
         return
       end
 
