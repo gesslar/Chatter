@@ -745,7 +745,7 @@ function Chatter.uninstall(event, package)
 end
 
 function Chatter.start(event, package)
-  if package ~= Chatter.config.name then return end
+  if package and package ~= Chatter.config.name then return end
 
   local host, port, connected = getConnectionInfo()
 
@@ -762,7 +762,12 @@ function Chatter.start(event, package)
   Chatter.glu.dependency:load_dependencies(
     Chatter.config.package_name,
     Chatter.config.dependencies,
-    function()
+    function(status, message)
+      if not status then
+        cecho(f"<red>{message}\n")
+        return
+      end
+
       Chatter.loadPrefs()
       Chatter.loadGroups()
       Chatter.buildStyles()
@@ -843,5 +848,12 @@ registerNamedEventHandler(
   Chatter.config.name,
   f "{Chatter.config.prefix}Install",
   "sysInstall",
+  Chatter.start
+)
+
+registerNamedEventHandler(
+  Chatter.config.name,
+  f"{Chatter.config.prefix}LoadEvent",
+  "sysLoadEvent",
   Chatter.start
 )

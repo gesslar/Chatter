@@ -44,8 +44,8 @@ function mod.new(parent)
 
   function dependencies_done()
     local cb = call_back
+    if cb then pcall(cb, true, nil) end
     clean_up()
-    if cb then pcall(cb) end
   end
 
   local function on_dependency_installed(event, pkg)
@@ -54,7 +54,7 @@ function mod.new(parent)
     end
 
     if #queue == 0 then
-      dependencies_done(package_name)
+      dependencies_done()
       return
     end
 
@@ -73,17 +73,17 @@ function mod.new(parent)
       end
     end
 
-    if queue == nil then
-      queue = {dependency}
-      tempTimer(0.25, process_queue)
-      return
-    end
-
     self.parent.valid:type(dependency, "table", 1, false)
     self.parent.valid:not_empty(dependency.name, 1, false)
     self.parent.valid:not_empty(dependency.url, 1, false)
     self.parent.valid:regex(dependency.url, self.parent.regex.http_url, 1, false)
     self.parent.valid:type(cb, "function", 2, true)
+
+    if queue == nil then
+      queue = { dependency }
+      tempTimer(0.25, process_queue)
+      return
+    end
 
     if cb then call_back = cb end
 
