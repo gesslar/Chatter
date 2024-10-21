@@ -843,7 +843,7 @@ Syntax: <h2>chatter</h2> [<h2>command</h2>]
   <h2>chatter restore</h2> - Restore the chatter window from minimized state.
 
   <h2>chatter save</h2> - Save the chatter window lock, visibility, and position.
-  <h2>chatter load</h2> - Load the last savedchatter window lock, visibility, and position.
+  <h2>chatter load</h2> - Load the last saved chatter window lock, visibility, and position.
 ]],
   }
 }
