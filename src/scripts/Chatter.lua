@@ -53,7 +53,7 @@ function Chatter.receiveComm(event)
   text = rex.gsub(text, "[\\r\\n]", " ")
 
   if Chatter.config.enable_intro == true then
-    text = f"{Chatter.config.intro} {Chatter.tyle.console.default_fg}{text}\n"
+    text = f"{Chatter.config.intro} {Chatter.style.console.default_fg}{text}\n"
   else
     text = f"{Chatter.style.console.default_fg}{text}\n"
   end
