@@ -21,7 +21,7 @@ GMCP Chat Package for Mudlet.
 * `chatter minimize` - Minimize the chatter window.
 * `chatter restore` - Restore the chatter window from minimized state.
 * `chatter save` - Save the chatter window lock, visibility, and position.
-* `chatter load` - Load the last savedchatter window lock, visibility, and position.
+* `chatter load` - Load the last saved chatter window lock, visibility, and position.
 
 ## Credits
 
