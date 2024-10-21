@@ -690,10 +690,23 @@ function Chatter.registerEventHandlers()
       Chatter.receiveComm(event)
     end
   )
-  registerNamedEventHandler(Chatter.config.name,
-    f"{Chatter.config.prefix}LoadEvent",
-    "sysLoadEvent",
-    Chatter.start
+  registerNamedEventHandler(
+    Chatter.config.name,
+    f "{Chatter.config.prefix}ConnectionScript",
+    "sysConnectionEvent",
+    Chatter.connectionScript
+  )
+  registerNamedEventHandler(
+    Chatter.config.name,
+    f "{Chatter.config.prefix}Uninstall",
+    "sysUninstall",
+    Chatter.uninstall
+  )
+  registerNamedEventHandler(
+    Chatter.config.name,
+    "chatter_command",
+    "chatter_command",
+    Chatter.chatterCommand
   )
 end
 
@@ -777,24 +790,11 @@ function Chatter.start(event, package)
       Chatter.buildStyles()
       Chatter.buildUi()
       Chatter.registerEventHandlers()
-      registerNamedEventHandler(
-        Chatter.config.name,
-        f"{Chatter.config.prefix}ConnectionScript",
-        "sysConnectionEvent",
-        Chatter.connectionScript
-      )
-      registerNamedEventHandler(
-        Chatter.config.name,
-        f"{Chatter.config.prefix}Uninstall",
-        "sysUninstall",
-        Chatter.uninstall
-      )
-      registerNamedEventHandler(
-        Chatter.config.name,
-        "chatter_command",
-        "chatter_command",
-        Chatter.chatterCommand
-      )
+
+      local host, port, connected = getConnectionInfo()
+      if connected then
+        Chatter.connectionScript()
+      end
 
       if Chatter.first_time == true then
         tempTimer(0.1, function() raiseEvent("chatter_command", "") end)
