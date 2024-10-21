@@ -15,6 +15,9 @@ Chatter = Chatter or {
     },
     dependencies = {
       { name = "Helper", url = "https://github.com/gesslar/Helper/releases/latest/download/Helper.mpackage" },
+      -- { name = "ThreshCopy", url = "https://github.com/gesslar/ThreshCopy/releases/latest/download/ThreshCopy.mpackage" },
+      -- { name = "ThreshBeep", url = "https://github.com/gesslar/ThreshBeep/releases/latest/download/ThreshBeep.mpackage" },
+      -- { name = "ThreshURL", url = "https://github.com/gesslar/ThreshURL/releases/latest/download/ThreshURL.mpackage" },
     },
     category = {
       type = {
@@ -53,9 +56,9 @@ function Chatter.receiveComm(event)
   text = rex.gsub(text, "[\\r\\n]", " ")
 
   if Chatter.config.enable_intro == true then
-    text = f"{Chatter.config.intro} {Chatter.config.style.console.default_fg}{text}\n"
+    text = f"{Chatter.config.intro} {Chatter.tyle.console.default_fg}{text}\n"
   else
-    text = f"{Chatter.config.style.console.default_fg}{text}\n"
+    text = f"{Chatter.style.console.default_fg}{text}\n"
   end
 
   local group, groups = Chatter.groups[channel], {}
@@ -78,31 +81,48 @@ function Chatter.addWidget(widget)
 end
 
 function Chatter.buildStyles()
+  -- local bg = {18, 22, 25}
+  local bg = {0,50,0}
   local center = f[[ qproperty-alignment: 'AlignCenter | AlignVCenter'; ]] -- Center text
   local normal = f[[ font-weight: normal; ]] -- Normal text
   local bold = f[[ font-weight: bold; ]] -- Bold text
-  local label_fg = f[[ color: rgb(175, 215, 0); ]] -- Label foreground color
-  local label_bg_selected = f[[ background-color: rgb(82, 100, 0); ]] -- Label selected background color
-  local label_bg_unselected = f[[ background-color: rgb(0, 50, 0); ]] -- Label unselected background color
-  local default_fg = "<180,180,180>" -- Default foreground color
-  local title_colour = "<82,100,0>"
+
+  local bg_selected = {82, 100, 0}
+  local fg_selected = Chatter.glu.colour:lighten_or_darken(bg_selected, bg_selected, 85)
+  local bg_unselected = {0, 50, 0}
+  local fg_unselected = Chatter.glu.colour:lighten_or_darken(bg_unselected, bg_unselected, 85)
+  local tab = {
+    fg = {
+      selected = fg_selected,
+      unselected = fg_unselected,
+    },
+    bg = {
+      selected = bg_selected,
+      unselected = bg_unselected,
+    }
+  }
+  local title_colour = tab.bg.selected
   local title_format = "l13b"
 
-  Chatter.config.style = {
+  Chatter.style = {
     header = {
-      background = f [[ {label_bg_unselected} ]],
+      background = f [[ background-color: rgba({table.concat(bg, ",")}, 100%); ]],
     },
     tabs = {
-      selected = f[[ {label_bg_selected} {center} {bold} {label_fg} text-decoration: underline; text-decoration-color: red; ]],
-      unselected = f[[ {label_bg_unselected} {center} {normal} {label_fg}]],
+      selected = f[[ {center} {bold} ]],
+      unselected = f[[ {center} {bold} ]],
+      colours = tab,
     },
     console = {
-      default_fg = default_fg,
+      default_fg = tab.fg.unselected,
       background = f[[ ]],
     },
     title = {
-      colour = title_colour,
+      colour = string.format("<%s>", table.concat(title_colour, ",")),
       format = title_format,
+    },
+    message = {
+      colour = string.format("<%s>", table.concat(color_table.sea_green, ",")),
     }
   }
 end
@@ -125,6 +145,146 @@ function Chatter.savePrefs()
   )
 end
 
+function Chatter.show()
+  if Chatter.MainWindow then
+    if Chatter.MainWindow.hidden then
+      Chatter.MainWindow:show()
+      if not Chatter.MainWindow.hidden then
+        decho(f"{Chatter.style.message.colour}Chatter window shown.\n")
+        Chatter.MainWindow:save()
+      else
+        decho(f"{Chatter.style.message.colour}Unable to show Chatter window.\n")
+      end
+    else
+      decho(f"{Chatter.style.message.colour}Chatter window is already visible.\n")
+    end
+  else
+    decho(f"{Chatter.style.message.colour}Unable to show Chatter window.\n")
+  end
+end
+
+function Chatter.hide()
+  if Chatter.MainWindow then
+    if not Chatter.MainWindow.hidden then
+      Chatter.MainWindow:hide()
+      if Chatter.MainWindow.hidden then
+        decho(f"{Chatter.style.message.colour}Chatter window hidden.\n")
+        Chatter.MainWindow:save()
+      else
+        decho(f"{Chatter.style.message.colour}Unable to hide Chatter window.\n")
+      end
+    else
+      decho(f"{Chatter.style.message.colour}Chatter window is already hidden.\n")
+    end
+  else
+    decho(f"{Chatter.style.message.colour}Unable to hide Chatter window.\n")
+  end
+end
+
+function Chatter.toggle()
+  if Chatter.MainWindow.hidden then
+    Chatter.show()
+  else
+    Chatter.hide()
+  end
+end
+
+function Chatter.isVisible()
+  return not Chatter.MainWindow.hidden
+end
+
+function Chatter.flash()
+  if Chatter.MainWindow then
+    Chatter.MainWindow:flash()
+  end
+end
+
+function Chatter.minimize()
+  if Chatter.MainWindow then
+    if not Chatter.MainWindow.minimized then
+      Chatter.MainWindow:minimize()
+      if Chatter.MainWindow.minimized then
+        decho(f"{Chatter.style.message.colour}Chatter window minimized.\n")
+        Chatter.MainWindow:save()
+      else
+        decho(f"{Chatter.style.message.colour}Unable to minimize Chatter window.\n")
+      end
+    else
+      decho(f"{Chatter.style.message.colour}Chatter window is already minimized.\n")
+    end
+  else
+    decho(f"{Chatter.style.message.colour}Unable to minimize Chatter window.\n")
+  end
+end
+
+function Chatter.restore()
+  if Chatter.MainWindow then
+    if Chatter.MainWindow.minimized then
+      Chatter.MainWindow:restore()
+      if not Chatter.MainWindow.minimized then
+        decho(f"{Chatter.style.message.colour}Chatter window restored.\n")
+        Chatter.MainWindow:save()
+      else
+        decho(f"{Chatter.style.message.colour}Unable to restore Chatter window.\n")
+      end
+    else
+      decho(f"{Chatter.style.message.colour}Chatter window is already restored.\n")
+    end
+  else
+    decho(f"{Chatter.style.message.colour}Unable to restore Chatter window.\n")
+  end
+end
+
+function Chatter.lock()
+  if Chatter.MainWindow then
+    if not Chatter.MainWindow.locked then
+      Chatter.MainWindow:lockContainer()
+      if Chatter.MainWindow.locked then
+        decho(f"{Chatter.style.message.colour}Chatter window locked.\n")
+        Chatter.MainWindow:save()
+      else
+        decho(f"{Chatter.style.message.colour}Unable to lock Chatter window.\n")
+      end
+    else
+      decho(f"{Chatter.style.message.colour}Chatter window is already locked.\n")
+    end
+  else
+    decho(f"{Chatter.style.message.colour}Unable to lock Chatter window.\n")
+  end
+end
+
+function Chatter.unlock()
+  if Chatter.MainWindow then
+    if Chatter.MainWindow.locked then
+      Chatter.MainWindow:unlockContainer()
+      if not Chatter.MainWindow.locked then
+        decho(f"{Chatter.style.message.colour}Chatter window unlocked.\n")
+        Chatter.MainWindow:save()
+      else
+        decho(f"{Chatter.style.message.colour}Unable to unlock Chatter window.\n")
+      end
+    else
+      decho(f"{Chatter.style.message.colour}Chatter window is already unlocked.\n")
+    end
+  else
+    decho(f"{Chatter.style.message.colour}Unable to unlock Chatter window.\n")
+  end
+end
+
+function Chatter.isLocked()
+  return Chatter.MainWindow.locked
+end
+
+function Chatter.save()
+  Chatter.MainWindow:save()
+  decho(f"{Chatter.style.message.colour}Chatter window saved.\n")
+end
+
+function Chatter.load()
+  Chatter.MainWindow:load()
+  decho(f"{Chatter.style.message.colour}Chatter window loaded.\n")
+end
+
 function Chatter.loadGroups()
   Chatter.groups = Chatter.glu.preferences:load_prefs(nil, "Chatter.Groups.lua", {})
 
@@ -139,8 +299,8 @@ function Chatter.buildUi()
   Chatter.MainWindow = Chatter.MainWindow or Adjustable.Container:new({
     name = f"{Chatter.config.name}.MainWindow",
     x = 0, y = 0,
-    width = 200,
-    padding = 10,
+    width = 400,
+    padding = 0,
     locked = false,
     titleText = "",
 
@@ -152,9 +312,9 @@ function Chatter.buildUi()
     buttonFontSize = 10,
     buttonsize = 20,
   })
-  Chatter.MainWindow:setTitle(f"{Chatter.config.name}", Chatter.config.style.title.colour, Chatter.config.style.title.format)
+  Chatter.MainWindow:setTitle(f"{Chatter.config.name}", Chatter.style.title.colour, Chatter.style.title.format)
   Chatter.addWidget(Chatter.MainWindow)
-  Chatter.MainWindow:show()
+  Chatter.MainWindow:hide()
 
   -- This is the container that holds everything
   Chatter.Container = Chatter.Container or Geyser.VBox:new({
@@ -171,7 +331,7 @@ function Chatter.buildUi()
     height = Chatter.config.metrics.tabs.height,
     width = f"100%-{tonumber(Chatter.MainWindow.buttonsize) * 3}",
     v_policy = Geyser.Fixed, h_policy = Geyser.Fixed,
-    stylesheet = f[[ background-color: rgb(0, 50, 0); ]],
+    stylesheet = Chatter.style.header.background,
   }, Chatter.Container)
   Chatter.addWidget(Chatter.TabBarFiller)
 
@@ -214,7 +374,10 @@ function Chatter.buildUi()
       tooltip = Chatter.config.category.type[name].tooltip,
       clickFunction = function() Chatter.click(name) end,
     }, Chatter.TabBar)
-    Chatter.tabs[name].tab:setStyle(Chatter.config.style.tabs.unselected)
+    Chatter.tabs[name].tab:echo(nil, "nocolor", nil)
+    Chatter.tabs[name].tab:setFontSize(10)
+    Chatter.tabs[name].tab:setStyle(Chatter.style.tabs.unselected)
+    Chatter.fade(Chatter.tabs[name].tab, "out", true)
     Chatter.addWidget(Chatter.tabs[name].tab)
 
     -- Create the console
@@ -225,13 +388,14 @@ function Chatter.buildUi()
         fontName = "Ubuntu",
         fontSize = 9,
       }, Chatter.Body)
-    Chatter.tabs[name].console:setBackgroundImage(Chatter.config.style.console.background, 4)
+    Chatter.tabs[name].console:setBackgroundImage(Chatter.style.console.background, 4)
     Chatter.addWidget(Chatter.tabs[name].console)
     Chatter.tabs[name].console:hide()
   end
 
+  Chatter.MainWindow:show()
   -- Show the default tab
-  tempTimer(0.1, function() Chatter.tabs["all"]["tab"]:press() end)
+  Chatter.click("all", true)
 end
 
 function Chatter.dismantleUi()
@@ -284,6 +448,26 @@ function Chatter.chatterCommand(event, input)
     Chatter.muteChannel(subcommand)
   elseif command == "unmute" then
     Chatter.unmuteChannel(subcommand)
+  elseif command == "toggle" then
+    Chatter.toggle()
+  elseif command == "show" then
+    Chatter.show()
+  elseif command == "hide" then
+    Chatter.hide()
+  elseif command == "flash" then
+    Chatter.flash()
+  elseif command == "lock" then
+    Chatter.lock()
+  elseif command == "unlock" then
+    Chatter.unlock()
+  elseif command == "minimize" then
+    Chatter.minimize()
+  elseif command == "restore" then
+    Chatter.restore()
+  elseif command == "save" then
+    Chatter.save()
+  elseif command == "load" then
+    Chatter.load()
   else
     echo(f"Invalid command: {command}\n")
   end
@@ -386,11 +570,18 @@ function Chatter.listChannels(group)
     local channels = {}
     for channel, element in pairs(Chatter.groups) do
       if element.group == g then
-        table.insert(channels, channel)
+        Chatter.glu.table:push(channels, channel)
       end
     end
 
     table.sort(channels, function(a, b) return a < b end)
+
+    channels = Chatter.glu.table:map(channels, function(_, v)
+      if Chatter.groups[v].muted then
+        return "[" .. v .. "]"
+      end
+      return v
+    end)
 
     cecho(f"Channels in group <b>{g}</b>:\n")
     local channel_names = table.concat(channels, ", ")
@@ -398,7 +589,61 @@ function Chatter.listChannels(group)
   end
 end
 
-function Chatter.click(tab_name)
+function Chatter.fade(widget, direction, immediate)
+  local tab_styles = Chatter.style.tabs
+  local widget_name = widget.name
+
+  local curr_fg, target_fg, curr_bg, target_bg
+
+  if direction == "in" then
+    curr_fg = tab_styles.colours.fg.unselected
+    target_fg = tab_styles.colours.fg.selected
+    curr_bg = tab_styles.colours.bg.unselected
+    target_bg = tab_styles.colours.bg.selected
+  elseif direction == "out" then
+    curr_fg = tab_styles.colours.fg.selected
+    target_fg = tab_styles.colours.fg.unselected
+    curr_bg = tab_styles.colours.bg.selected
+    target_bg = tab_styles.colours.bg.unselected
+  else
+    return
+  end
+
+  local delay = .025
+  local step = immediate and 100 or 5
+  local state = 0
+
+  local timer_name = f"{Chatter.config.prefix}Fade_{widget_name}"
+  if not table.index_of(getNamedTimers(Chatter.config.name), timer_name) then
+    deleteNamedTimer(Chatter.config.name, timer_name)
+  end
+
+  registerNamedTimer(Chatter.config.name, timer_name, delay, function()
+    state = state + step
+    local style_string
+    local fg_colour_string, bg_colour_string
+    if state >= 100 then
+      style_string = Chatter.style.tabs.selected
+      fg_colour_string = "rgb(" .. table.concat(target_fg, ",") .. ")"
+      bg_colour_string = "rgb(" .. table.concat(target_bg, ",") .. ")"
+    else
+      curr_fg = Chatter.glu.colour:interpolate(curr_fg, target_fg, state)
+      curr_bg = Chatter.glu.colour:interpolate(curr_bg, target_bg, state)
+      style_string = Chatter.style.tabs.unselected
+      fg_colour_string = "rgb(" .. table.concat(curr_fg, ",") .. ")"
+      bg_colour_string = "rgb(" .. table.concat(curr_bg, ",") .. ")"
+    end
+
+    local style = f"{style_string} color: {fg_colour_string}; background-color: {bg_colour_string};"
+    widget:setStyle(style)
+
+    if state >= 100 then
+      deleteNamedTimer(Chatter.config.name, timer_name)
+    end
+  end, true)
+end
+
+function Chatter.click(tab_name, force)
   if not Chatter.tabs[tab_name] then return end
 
   -- Hide the current tab
@@ -406,12 +651,16 @@ function Chatter.click(tab_name)
   local current_tab = Chatter.tabs[current_tab_name].tab
   local current_console = Chatter.tabs[current_tab_name].console
 
-  current_tab:setStyle(Chatter.config.style.tabs.unselected)
+  if current_tab_name == tab_name and not force then
+    return
+  end
+
+  Chatter.fade(current_tab, "out")
   current_console:hide()
 
   -- Show the new tab
   local new_tab = Chatter.tabs[tab_name].tab
-  new_tab:setStyle(Chatter.config.style.tabs.selected)
+  Chatter.fade(new_tab, "in")
 
   local new_console = Chatter.tabs[tab_name].console
   new_console:show()
@@ -444,6 +693,11 @@ function Chatter.registerEventHandlers()
       Chatter.receiveComm(event)
     end
   )
+  registerNamedEventHandler(Chatter.config.name,
+    f"{Chatter.config.prefix}LoadEvent",
+    "sysLoadEvent",
+    Chatter.start
+  )
 end
 
 function Chatter.unregisterEventHandlers()
@@ -467,18 +721,18 @@ end
 function Chatter.clearConsole(event, menu, window, startCol, startRow, endCol, endRow)
   clearWindow(window)
 end
-addMouseEvent("Clear Console", "ClearConsole", "Clear Console", "Clear the entire history of this console")
-registerNamedEventHandler(Chatter.config.name, "ClearConsole", "Clear Console", function(...) Chatter.clearConsole(...) end)
-
--- This is the install routine
-function Chatter.install(event, package, file)
-  if package ~= Chatter.config.name then return end
-
-  deleteNamedEventHandler(Chatter.config.name, f"{Chatter.config.prefix}Install")
-  Chatter.connectionScript()
-
-  tempTimer(1, function() raiseEvent("chatter_command", "") end)
-end
+addMouseEvent(
+  "Clear Console",
+  "ClearConsole",
+  "Clear Console",
+  "Clear the entire history of this console"
+)
+registerNamedEventHandler(
+  Chatter.config.name,
+  "ClearConsole",
+  "Clear Console",
+  function(...) Chatter.clearConsole(...) end
+)
 
 -- This is the uninstall routine. Cleans everything up!
 function Chatter.uninstall(event, package)
@@ -490,20 +744,58 @@ function Chatter.uninstall(event, package)
   Chatter.dismantleUi()
   Chatter.glu = nil
   Chatter = nil
-  cecho("\n<red>You have uninstalled Chatter.\n")
+  cecho("<red>You have uninstalled Chatter.\n")
 end
 
-function Chatter.start()
-  Chatter.glu.dependency:load_dependencies(Chatter.config.package_name, Chatter.config.dependencies)
-  Chatter.loadPrefs()
-  Chatter.loadGroups()
-  Chatter.buildStyles()
-  Chatter.buildUi()
-  Chatter.registerEventHandlers()
-  registerNamedEventHandler(Chatter.config.name, f"{Chatter.config.prefix}ConnectionScript", "sysConnectionEvent", function() Chatter.connectionScript() end)
-  registerNamedEventHandler(Chatter.config.name, f"{Chatter.config.prefix}Install", "sysInstallPackage", function(event,package,file) Chatter.install(event,package,file) end)
-  registerNamedEventHandler(Chatter.config.name, f"{Chatter.config.prefix}Uninstall", "sysUninstallPackage", function(event,package) Chatter.uninstall(event,package) end)
-  registerNamedEventHandler(Chatter.config.name, "chatter_command", "chatter_command", function(event, input) Chatter.chatterCommand(event, input) end)
+function Chatter.start(event, package)
+  if package ~= Chatter.config.name then return end
+
+  local host, port, connected = getConnectionInfo()
+
+  if event == "sysInstall" then
+    if package ~= Chatter.config.name then return end
+    Chatter.first_time = true
+
+    deleteNamedEventHandler(Chatter.config.name, f "{Chatter.config.prefix}Install")
+    if connected then
+      Chatter.connectionScript()
+    end
+  end
+
+  Chatter.glu.dependency:load_dependencies(
+    Chatter.config.package_name,
+    Chatter.config.dependencies,
+    function()
+      Chatter.loadPrefs()
+      Chatter.loadGroups()
+      Chatter.buildStyles()
+      Chatter.buildUi()
+      Chatter.registerEventHandlers()
+      registerNamedEventHandler(
+        Chatter.config.name,
+        f"{Chatter.config.prefix}ConnectionScript",
+        "sysConnectionEvent",
+        Chatter.connectionScript
+      )
+      registerNamedEventHandler(
+        Chatter.config.name,
+        f"{Chatter.config.prefix}Uninstall",
+        "sysUninstall",
+        Chatter.uninstall
+      )
+      registerNamedEventHandler(
+        Chatter.config.name,
+        "chatter_command",
+        "chatter_command",
+        Chatter.chatterCommand
+      )
+
+      if Chatter.first_time == true then
+        tempTimer(0.1, function() raiseEvent("chatter_command", "") end)
+        Chatter.first_time = false
+      end
+    end
+  )
 end
 
 -- ----------------------------------------------------------------------------
@@ -524,14 +816,35 @@ Chatter.help = {
 Syntax: <h2>chatter</h2> [<h2>command</h2>]
 
   <h2>chatter</h2> - See this help text.
+
   <h2>chatter add</h2> <<h2>channel</h2>> to <<h2>group</h2>> - Add a channel to a group.
   <h2>chatter remove</h2> <<h2>channel</h2>> from <<h2>group</h2>> - Remove a channel from a group.
+
   <h2>chatter mute</h2> <<h2>channel</h2>> - Mute a channel.
   <h2>chatter unmute</h2> <<h2>channel</h2>> - Unmute a channel.
+
   <h2>chatter list</h2> <<h2>group</h2>> - List the channels in a group.
   <h2>chatter list all</h2> - List all channels and groups.
+
+  <h2>chatter toggle</h2> - Toggle the visibility of the chatter window.
+  <h2>chatter show</h2> - Show the chatter window.
+  <h2>chatter hide</h2> - Hide the chatter window.
+  <h2>chatter flash</h2> - Flash the chatter window.
+  <h2>chatter lock</h2> - Lock the chatter window to prevent it from being changed.
+  <h2>chatter unlock</h2> - Unlock the chatter window.
+
+  <h2>chatter minimize</h2> - Minimize the chatter window.
+  <h2>chatter restore</h2> - Restore the chatter window from minimized state.
+
+  <h2>chatter save</h2> - Save the chatter window lock, visibility, and position.
+  <h2>chatter load</h2> - Load the last savedchatter window lock, visibility, and position.
 ]],
   }
 }
 
-Chatter.start()
+registerNamedEventHandler(
+  Chatter.config.name,
+  f "{Chatter.config.prefix}Install",
+  "sysInstall",
+  Chatter.start
+)

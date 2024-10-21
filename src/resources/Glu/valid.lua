@@ -32,9 +32,8 @@ function mod.new(parent)
   --- @param argument_index number - The index of the argument.
   --- @param nil_allowed boolean - Whether nil is allowed (default false)
   function instance:type(value, expected_type, argument_index, nil_allowed)
-    if nil_allowed and value == nil then
-      return
-    end
+    if nil_allowed and value == nil then return end
+    if expected_type == "any" then return end
 
     local last = get_last_traceback_line()
 
