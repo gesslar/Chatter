@@ -381,6 +381,7 @@ function Chatter.buildUi()
     Chatter.tabs[name].console = Chatter.tabs[name].console or
       Geyser.MiniConsole:new({
         x = 0, y = 5, width = "100%", height = "100%-2",
+        name = f"{Chatter.config.name}.Tabs.{name}.Console",
         autoWrap = true,
         fontName = "Ubuntu",
         fontSize = 9,
@@ -729,6 +730,10 @@ function Chatter.connectionScript()
 end
 
 function Chatter.clearConsole(event, menu, window, startCol, startRow, endCol, endRow)
+  if window == "main" then
+    window = nil
+  end
+
   clearWindow(window)
 end
 addMouseEvent(
@@ -739,9 +744,9 @@ addMouseEvent(
 )
 registerNamedEventHandler(
   Chatter.config.name,
+  "Console.Clear",
   "ClearConsole",
-  "Clear Console",
-  function(...) Chatter.clearConsole(...) end
+  Chatter.clearConsole
 )
 
 -- This is the uninstall routine. Cleans everything up!
