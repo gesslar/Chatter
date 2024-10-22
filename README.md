@@ -22,7 +22,7 @@ GMCP Chat Package for Mudlet.
 * `chatter restore` - Restore the chatter window from minimized state.
 * `chatter save` - Save the chatter window lock, visibility, and position.
 * `chatter load` - Load the last saved chatter window lock, visibility, and position.
-
+* `chatter size` - Set the font size for the chatter window.
 ## Credits
 
 ### Icons

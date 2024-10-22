@@ -28,7 +28,9 @@ Chatter = Chatter or {
     style = {},
     intro = "<82,100,0>○",
     enable_intro = true,
-    defaults = {},
+    defaults = {
+      size = 12,
+    },
   },
   current = "all",
   groups = {},
@@ -384,7 +386,7 @@ function Chatter.buildUi()
         name = f"{Chatter.config.name}.Tabs.{name}.Console",
         autoWrap = true,
         fontName = "Ubuntu",
-        fontSize = 9,
+        fontSize = Chatter.prefs.size or 9,
       }, Chatter.Body)
     Chatter.tabs[name].console:setBackgroundImage(Chatter.style.console.background, 4)
     Chatter.addWidget(Chatter.tabs[name].console)
@@ -466,9 +468,18 @@ function Chatter.chatterCommand(event, input)
     Chatter.save()
   elseif command == "load" then
     Chatter.load()
+  elseif command == "size" then
+    Chatter.setFontSize(subcommand)
   else
     echo(f"Invalid command: {command}\n")
   end
+end
+
+function Chatter.setFontSize(size)
+  for _, tab in pairs(Chatter.tabs) do
+    tab.console:setFontSize(tonumber(size))
+  end
+  Chatter.savePrefs()
 end
 
 function Chatter.addChannel(channel, group)
@@ -849,6 +860,8 @@ Syntax: <h2>chatter</h2> [<h2>command</h2>]
 
   <h2>chatter save</h2> - Save the chatter window lock, visibility, and position.
   <h2>chatter load</h2> - Load the last saved chatter window lock, visibility, and position.
+
+  <h2>chatter size</h2> <<h2>size</h2>> - Set the font size for the chatter window.
 ]],
   }
 }
