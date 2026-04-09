@@ -11,7 +11,7 @@ GMCP Chat Package for Mudlet.
 * `chatter mute <channel>` - Mute a channel.
 * `chatter unmute <channel>` - Unmute a channel.
 * `chatter list <group>` - List the channels in a group.
-* `chatter list all `- List all channels and groups.
+* `chatter list all`- List all channels and groups.
 * `chatter toggle` - Toggle the visibility of the chatter window.
 * `chatter show` - Show the chatter window.
 * `chatter hide` - Hide the chatter window.
@@ -23,6 +23,7 @@ GMCP Chat Package for Mudlet.
 * `chatter save` - Save the chatter window lock, visibility, and position.
 * `chatter load` - Load the last saved chatter window lock, visibility, and position.
 * `chatter size` - Set the font size for the chatter window.
+
 ## Credits
 
 ### Icons
