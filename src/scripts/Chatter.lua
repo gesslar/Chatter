@@ -159,7 +159,7 @@ function Chatter.show()
       decho(Chatter.style.message.colour .. "Chatter window is already visible.\n")
     end
   else
-    decho(Chatter.style.message.colour .. "}Unable to show Chatter window.\n")
+    decho(Chatter.style.message.colour .. "Unable to show Chatter window.\n")
   end
 end
 
@@ -810,7 +810,7 @@ function Chatter.start(event, package)
     function(status, message)
       if not status then
         if message then
-          cecho("<red>" .. message "\n")
+          cecho("<red>" .. message .. "\n")
         else
           cecho("<red>Failed to load dependencies for " .. Chatter.config.package_name .. "\n")
         end
