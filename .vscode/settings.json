@@ -2,6 +2,10 @@
   "Lua.runtime.version": "Lua 5.1",
   "Lua.diagnostics.globals": [
     "mudlet",
-    "helper"
+    "helper",
+    "Glu"
+  ],
+  "Lua.workspace.library": [
+    "$HOME/.config/Code/User/globalStorage/delwing.mudlet-scripts-sdk\\docs"
   ]
 }

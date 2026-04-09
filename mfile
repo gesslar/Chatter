@@ -1,8 +1,8 @@
 {
   "package": "Chatter",
-  "title": "Manage messages on channels in a separate window",
-  "version": "2.2.3",
-  "author": "Gesslar",
+  "title": "Manage messages on channels in a separate window using GMCP.",
+  "version": "2.3.0",
+  "author": "gesslar",
   "icon": "chat.png",
   "dependencies": "",
   "outputFile": true

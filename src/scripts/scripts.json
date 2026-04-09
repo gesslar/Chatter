@@ -1,8 +1,8 @@
 [
   {
+    "name": "Chatter",
     "isActive": "yes",
     "isFolder": "no",
-    "name": "Chatter",
     "script": ""
   }
 ]
