@@ -1,14 +1,14 @@
 name: Release
 
 on:
-  workflow_dispatch:
   pull_request:
     types: [closed]
     branches: [main]
 
 jobs:
-  Release:
-    uses: gesslar/Maint/.github/workflows/ReleaseMuddyInjectMupdate.yaml@main
+  release:
+    if: github.event.pull_request.merged == true
+    uses: gesslar/Maint/.github/workflows/ReleaseMudlet.yaml@main
     secrets: inherit
     permissions:
       contents: write
