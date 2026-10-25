@@ -26,4 +26,4 @@ GMCP Chat Package for Mudlet.
 
 ## License
 
-`chatter` is released under the [0BSD](LICENSE.txt).
+`chatter` is released under the [0BSD](https://opensource.org/license/0bsd).

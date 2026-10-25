@@ -1,6 +1,6 @@
 {
   "name": "chatter",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "description": "Manage messages on channels in a separate window using GMCP.",
   "scripts": {
     "build": "npx -y @gesslar/muddy",
