@@ -3,11 +3,11 @@
   "version": "2.4.0",
   "description": "Manage messages on channels in a separate window using GMCP.",
   "scripts": {
-    "build": "npx -y muddy",
-    "watch": "npx -y muddy -w",
-    "major": "npx -y muddy version major --package",
-    "minor": "npx -y muddy version minor --package",
-    "patch": "npx -y muddy version patch --package",
+    "build": "npx -y @gesslar/muddy",
+    "watch": "npx -y @gesslar/muddy -w",
+    "major": "npx -y @gesslar/muddy version major --package",
+    "minor": "npx -y @gesslar/muddy version minor --package",
+    "patch": "npx -y @gesslar/muddy version patch --package",
     "update": "npx -y npm-check-updates -u && npm install",
     "pr": "gt submit -p --ai"
   },

@@ -6,7 +6,6 @@ __PKGNAME__ = __PKGNAME__ or {
     package_path = getMudletHomeDir() .. "/__PKGNAME__/",
     preferences_file = "__PKGNAME__.Preferences.lua",
     history_file = getMudletHomeDir() .. "/__PKGNAME__.History.lua",
-    prefix = "__PKGNAME__:",
     metrics = {
       tabs = {
         height = 25,
@@ -415,7 +414,7 @@ function __PKGNAME__.buildUi()
 end
 
 function __PKGNAME__.dismantleUi()
-  for _, v in ipairs(__PKGNAME__.widget) do
+  for _, v in pairs(__PKGNAME__.widget or {}) do
     if v ~= nil then
       -- We will do this last.
       if v.name ~= "__PKGNAME__.MainWindow" then
@@ -449,7 +448,7 @@ function __PKGNAME__.command(_, input)
     local group = rex.match(value, "^(?:to|from)\\s*(.+)$")
 
     if not group or not __PKGNAME__.config.category.type[group] then
-      echo("Invalid group: " .. group .. "\n")
+      echo("Invalid group: " .. tostring(group or value) .. "\n")
       return
     end
 
@@ -492,9 +491,16 @@ function __PKGNAME__.command(_, input)
 end
 
 function __PKGNAME__.setFontSize(size)
-  for _, tab in pairs(__PKGNAME__.tabs) do
-    tab.console:setFontSize(tonumber(size))
+  local font_size = tonumber(size)
+  if not font_size then
+    echo("Invalid font size: " .. tostring(size) .. "\n")
+    return
   end
+
+  for _, tab in pairs(__PKGNAME__.tabs) do
+    tab.console:setFontSize(font_size)
+  end
+  __PKGNAME__.prefs.size = font_size
   __PKGNAME__.savePrefs()
 
   cecho("__PKGNAME__ font size set to <b>" .. tostring(size) .. "</b>.\n")
@@ -641,7 +647,7 @@ function __PKGNAME__.fade(widget, direction, immediate)
   local state = 0
 
   local timer_name = "__PKGNAME__:Fade_" .. widget_name
-  if not table.index_of(getNamedTimers("__PKGNAME__"), timer_name) then
+  if table.index_of(getNamedTimers("__PKGNAME__"), timer_name) then
     deleteNamedTimer("__PKGNAME__", timer_name)
   end
 
@@ -761,8 +767,6 @@ function __PKGNAME__.connectionScript()
   __PKGNAME__.unregisterEventHandlers()
   __PKGNAME__.registerEventHandlers()
 
-  local prefix = "__PKGNAME__:"
-
   if not resumeNamedTimer("__PKGNAME__", "ConnectionTimer") then
     registerNamedTimer("__PKGNAME__", "ConnectionTimer", 1, function()
       sendGMCP([[Core.Supports.Add ["Comm 1"] ]])
@@ -786,8 +790,8 @@ function __PKGNAME__.uninstall(event, package)
   if package ~= "__PKGNAME__" then return end
 
   deleteAllNamedTimers("__PKGNAME__")
-  __PKGNAME__.unregisterEventHandlers()
-  deleteNamedEventHandler("__PKGNAME__", "Uninstall")
+  deleteAllNamedEventHandlers("__PKGNAME__")
+  removeMouseEvent("Clear Console")
   __PKGNAME__.dismantleUi()
   cecho("<red>[__PKGNAME__]<r> You have uninstalled __PKGNAME__.\n")
   __PKGNAME__ = nil
@@ -803,7 +807,7 @@ function __PKGNAME__.start(event, package)
 
     __PKGNAME__.first_time = true
 
-    deleteNamedEventHandler("__PKGNAME__", "__PKGNAME__:Install")
+    deleteNamedEventHandler("__PKGNAME__", "install")
     if connected then
       __PKGNAME__.connectionScript()
     end
@@ -906,7 +910,7 @@ registerNamedEventHandler(
 
 addMouseEvent(
   "Clear Console",
-  "ClearConsole",
+  "__PKGNAME__:ClearConsole",
   "Clear Console",
   "Clear the entire history of this console"
 )
