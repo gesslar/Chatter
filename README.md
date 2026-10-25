@@ -24,8 +24,6 @@ GMCP Chat Package for Mudlet.
 * `chatter load` - Load the last saved chatter window lock, visibility, and position.
 * `chatter size` - Set the font size for the chatter window.
 
-## Credits
+## License
 
-### Icons
-
-[Communication icons created by Vectors Market - Flaticon](https://www.flaticon.com/free-icons/communication)
+`chatter` is released under the [0BSD](LICENSE.txt).

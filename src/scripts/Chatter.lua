@@ -1,14 +1,12 @@
-local script_name = "Chatter"
+---@class Glu
+local glu = require("__PKGNAME__/vendor/Glu-single")("__PKGNAME__")
 
-Chatter = Chatter or {
+__PKGNAME__ = __PKGNAME__ or {
   config = {
-    name = script_name,
-    package_name = "__PKGNAME__",
-    package_version = "__VERSION__",
     package_path = getMudletHomeDir() .. "/__PKGNAME__/",
-    preferences_file = script_name .. ".Preferences.lua",
-    history_file = getMudletHomeDir() .. "/" .. script_name .. ".History.lua",
-    prefix = script_name .. ":",
+    preferences_file = "__PKGNAME__.Preferences.lua",
+    history_file = getMudletHomeDir() .. "/__PKGNAME__.History.lua",
+    prefix = "__PKGNAME__:",
     metrics = {
       tabs = {
         height = 25,
@@ -28,7 +26,7 @@ Chatter = Chatter or {
     },
     style = {},
     intro = "<82,100,0>○",
-    enable_intro = true,
+    enable_intro = false,
     defaults = {
       size = 12,
     },
@@ -38,27 +36,30 @@ Chatter = Chatter or {
   tabs = {},
   widget = {},
   prefs = {},
-  glu = require("__PKGNAME__/Glu-single")("__PKGNAME__"),
+  history = {}
 }
 
-Chatter.history = {}
-
 -- Channel management
-function Chatter.receiveComm(event)
-  local channel = gmcp.Comm.Channel.Text.channel
-  local text = gmcp.Comm.Channel.Text.text
+function __PKGNAME__.receiveComm(event)
+  local channel = gmcp.Comm.Channel.Text.channel or ""
+  local text = gmcp.Comm.Channel.Text.text or ""
 
-  text = ansi2decho(text)
+  text = ansi2decho(text) --[[@as string]]
+
   -- Replace line breaks with spaces, to wrap!
-  text = rex.gsub(text, "[\\r\\n]", " ")
+  text = rex.gsub(text, "[\\r\\n]", " ") --[[@as string]]
 
-  if Chatter.config.enable_intro == true then
-    text = Chatter.config.intro .. "<r> " .. text .. "\n"
+  if __PKGNAME__.config.enable_intro == true then
+    text = __PKGNAME__.config.intro .. "<r> " .. text .. "\n"
   else
-    text = Chatter.style.console.default_fg .. text .. "\n"
+    text = string.format(
+      "<%s>%s\n",
+      table.concat(__PKGNAME__.style.console.default_fg, ","),
+      text
+    ) --[[@as string]]
   end
 
-  local group, groups = Chatter.groups[channel], {}
+  local group, groups = __PKGNAME__.groups[channel], {}
   if group then
     if not group.muted then
       groups = { "all", group.group }
@@ -67,30 +68,29 @@ function Chatter.receiveComm(event)
     groups = { "all" }
   end
 
-  Chatter.echo(groups, text)
+  __PKGNAME__.echo(groups, text)
 
   -- Maybe later
   -- Chatter.log(groups, text)
 end
 
-function Chatter.addWidget(widget)
-  Chatter.widget = Chatter.widget or {}
+function __PKGNAME__.addWidget(widget)
+  __PKGNAME__.widget = __PKGNAME__.widget or {}
 
   local name = widget.name
-  Chatter.widget[name] = Chatter.widget[name] or widget
+
+  __PKGNAME__.widget[name] = __PKGNAME__.widget[name] or widget
 end
 
-function Chatter.buildStyles()
-  -- local bg = {18, 22, 25}
-  local bg = { 0, 50, 0 }
+function __PKGNAME__.buildStyles()
+  local bg = {0, 50, 0}
   local center = "qproperty-alignment: 'AlignCenter | AlignVCenter';" -- Center text
-  local normal = "font-weight: normal;"                               -- Normal text
   local bold = "font-weight: bold;"                                   -- Bold text
 
-  local bg_selected = { 82, 100, 0 }
-  local fg_selected = Chatter.glu.colour.lighten_or_darken(bg_selected, bg_selected, 85)
-  local bg_unselected = { 0, 50, 0 }
-  local fg_unselected = Chatter.glu.colour.lighten_or_darken(bg_unselected, bg_unselected, 85)
+  local bg_selected = {82, 100, 0}
+  local fg_selected = glu.colour.lighten_or_darken(bg_selected, bg_selected, 85)
+  local bg_unselected = {0, 50, 0}
+  local fg_unselected = glu.colour.lighten_or_darken(bg_unselected, bg_unselected, 85)
   local tab = {
     fg = {
       selected = fg_selected,
@@ -104,7 +104,7 @@ function Chatter.buildStyles()
   local title_colour = tab.bg.selected
   local title_format = "l13b"
 
-  Chatter.style = {
+  __PKGNAME__.style = {
     header = {
       background = "background-color: rgba(" .. table.concat(bg, ",") .. ", 100%);",
     },
@@ -127,177 +127,177 @@ function Chatter.buildStyles()
   }
 end
 
-function Chatter.loadPrefs()
-  Chatter.prefs = Chatter.glu.preferences.load(
+function __PKGNAME__.loadPrefs()
+  __PKGNAME__.prefs = glu.preferences.load(
     nil,
-    Chatter.config.preferences_file,
-    Chatter.config.defaults
+    __PKGNAME__.config.preferences_file,
+    __PKGNAME__.config.defaults
   )
 
-  Chatter.savePrefs()
+  __PKGNAME__.savePrefs()
 end
 
-function Chatter.savePrefs()
-  Chatter.glu.preferences.save(
+function __PKGNAME__.savePrefs()
+  glu.preferences.save(
     nil,
-    Chatter.config.preferences_file,
-    Chatter.prefs
+    __PKGNAME__.config.preferences_file,
+    __PKGNAME__.prefs
   )
 end
 
-function Chatter.show()
-  if Chatter.MainWindow then
-    if Chatter.MainWindow.hidden then
-      Chatter.MainWindow:show()
-      if not Chatter.MainWindow.hidden then
-        decho(Chatter.style.message.colour .. "Chatter window shown.\n")
-        Chatter.MainWindow:save()
+function __PKGNAME__.show()
+  if __PKGNAME__.MainWindow then
+    if __PKGNAME__.MainWindow.hidden then
+      __PKGNAME__.MainWindow:show()
+      if not __PKGNAME__.MainWindow.hidden then
+        decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window shown.\n")
+        __PKGNAME__.MainWindow:save()
       else
-        decho(Chatter.style.message.colour .. "Unable to show Chatter window.\n")
+        decho(__PKGNAME__.style.message.colour .. "Unable to show __PKGNAME__ window.\n")
       end
     else
-      decho(Chatter.style.message.colour .. "Chatter window is already visible.\n")
+      decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window is already visible.\n")
     end
   else
-    decho(Chatter.style.message.colour .. "Unable to show Chatter window.\n")
+    decho(__PKGNAME__.style.message.colour .. "Unable to show __PKGNAME__ window.\n")
   end
 end
 
-function Chatter.hide()
-  if Chatter.MainWindow then
-    if not Chatter.MainWindow.hidden then
-      Chatter.MainWindow:hide()
-      if Chatter.MainWindow.hidden then
-        decho(Chatter.style.message.colour .. "Chatter window hidden.\n")
-        Chatter.MainWindow:save()
+function __PKGNAME__.hide()
+  if __PKGNAME__.MainWindow then
+    if not __PKGNAME__.MainWindow.hidden then
+      __PKGNAME__.MainWindow:hide()
+      if __PKGNAME__.MainWindow.hidden then
+        decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window hidden.\n")
+        __PKGNAME__.MainWindow:save()
       else
-        decho(Chatter.style.message.colour .. "Unable to hide Chatter window.\n")
+        decho(__PKGNAME__.style.message.colour .. "Unable to hide __PKGNAME__ window.\n")
       end
     else
-      decho(Chatter.style.message.colour .. "Chatter window is already hidden.\n")
+      decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window is already hidden.\n")
     end
   else
-    decho(Chatter.style.message.colour .. "Unable to hide Chatter window.\n")
+    decho(__PKGNAME__.style.message.colour .. "Unable to hide __PKGNAME__ window.\n")
   end
 end
 
-function Chatter.toggle()
-  if Chatter.MainWindow.hidden then
-    Chatter.show()
+function __PKGNAME__.toggle()
+  if __PKGNAME__.MainWindow.hidden then
+    __PKGNAME__.show()
   else
-    Chatter.hide()
+    __PKGNAME__.hide()
   end
 end
 
-function Chatter.isVisible()
-  return not Chatter.MainWindow.hidden
+function __PKGNAME__.isVisible()
+  return not __PKGNAME__.MainWindow.hidden
 end
 
-function Chatter.flash()
-  if Chatter.MainWindow then
-    Chatter.MainWindow:flash()
+function __PKGNAME__.flash()
+  if __PKGNAME__.MainWindow then
+    __PKGNAME__.MainWindow:flash()
   end
 end
 
-function Chatter.minimize()
-  if Chatter.MainWindow then
-    if not Chatter.MainWindow.minimized then
-      Chatter.MainWindow:minimize()
-      if Chatter.MainWindow.minimized then
-        decho(Chatter.style.message.colour .. "Chatter window minimized.\n")
-        Chatter.MainWindow:save()
+function __PKGNAME__.minimize()
+  if __PKGNAME__.MainWindow then
+    if not __PKGNAME__.MainWindow.minimized then
+      __PKGNAME__.MainWindow:minimize()
+      if __PKGNAME__.MainWindow.minimized then
+        decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window minimized.\n")
+        __PKGNAME__.MainWindow:save()
       else
-        decho(Chatter.style.message.colour .. "Unable to minimize Chatter window.\n")
+        decho(__PKGNAME__.style.message.colour .. "Unable to minimize __PKGNAME__ window.\n")
       end
     else
-      decho(Chatter.style.message.colour .. "Chatter window is already minimized.\n")
+      decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window is already minimized.\n")
     end
   else
-    decho(Chatter.style.message.colour .. "Unable to minimize Chatter window.\n")
+    decho(__PKGNAME__.style.message.colour .. "Unable to minimize __PKGNAME__ window.\n")
   end
 end
 
-function Chatter.restore()
-  if Chatter.MainWindow then
-    if Chatter.MainWindow.minimized then
-      Chatter.MainWindow:restore()
-      if not Chatter.MainWindow.minimized then
-        decho(Chatter.style.message.colour .. "Chatter window restored.\n")
-        Chatter.MainWindow:save()
+function __PKGNAME__.restore()
+  if __PKGNAME__.MainWindow then
+    if __PKGNAME__.MainWindow.minimized then
+      __PKGNAME__.MainWindow:restore()
+      if not __PKGNAME__.MainWindow.minimized then
+        decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window restored.\n")
+        __PKGNAME__.MainWindow:save()
       else
-        decho(Chatter.style.message.colour .. "Unable to restore Chatter window.\n")
+        decho(__PKGNAME__.style.message.colour .. "Unable to restore __PKGNAME__ window.\n")
       end
     else
-      decho(Chatter.style.message.colour .. "Chatter window is already restored.\n")
+      decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window is already restored.\n")
     end
   else
-    decho(Chatter.style.message.colour .. "Unable to restore Chatter window.\n")
+    decho(__PKGNAME__.style.message.colour .. "Unable to restore __PKGNAME__ window.\n")
   end
 end
 
-function Chatter.lock()
-  if Chatter.MainWindow then
-    if not Chatter.MainWindow.locked then
-      Chatter.MainWindow:lockContainer()
-      if Chatter.MainWindow.locked then
-        decho(Chatter.style.message.colour .. "Chatter window locked.\n")
-        Chatter.MainWindow:save()
+function __PKGNAME__.lock()
+  if __PKGNAME__.MainWindow then
+    if not __PKGNAME__.MainWindow.locked then
+      __PKGNAME__.MainWindow:lockContainer()
+      if __PKGNAME__.MainWindow.locked then
+        decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window locked.\n")
+        __PKGNAME__.MainWindow:save()
       else
-        decho(Chatter.style.message.colour .. "Unable to lock Chatter window.\n")
+        decho(__PKGNAME__.style.message.colour .. "Unable to lock __PKGNAME__ window.\n")
       end
     else
-      decho(Chatter.style.message.colour .. "Chatter window is already locked.\n")
+      decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window is already locked.\n")
     end
   else
-    decho(Chatter.style.message.colour .. "Unable to lock Chatter window.\n")
+    decho(__PKGNAME__.style.message.colour .. "Unable to lock __PKGNAME__ window.\n")
   end
 end
 
-function Chatter.unlock()
-  if Chatter.MainWindow then
-    if Chatter.MainWindow.locked then
-      Chatter.MainWindow:unlockContainer()
-      if not Chatter.MainWindow.locked then
-        decho(Chatter.style.message.colour .. "Chatter window unlocked.\n")
-        Chatter.MainWindow:save()
+function __PKGNAME__.unlock()
+  if __PKGNAME__.MainWindow then
+    if __PKGNAME__.MainWindow.locked then
+      __PKGNAME__.MainWindow:unlockContainer()
+      if not __PKGNAME__.MainWindow.locked then
+        decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window unlocked.\n")
+        __PKGNAME__.MainWindow:save()
       else
-        decho(Chatter.style.message.colour .. "Unable to unlock Chatter window.\n")
+        decho(__PKGNAME__.style.message.colour .. "Unable to unlock __PKGNAME__ window.\n")
       end
     else
-      decho(Chatter.style.message.colour .. "Chatter window is already unlocked.\n")
+      decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window is already unlocked.\n")
     end
   else
-    decho(Chatter.style.message.colour .. "Unable to unlock Chatter window.\n")
+    decho(__PKGNAME__.style.message.colour .. "Unable to unlock __PKGNAME__ window.\n")
   end
 end
 
-function Chatter.isLocked()
-  return Chatter.MainWindow.locked
+function __PKGNAME__.isLocked()
+  return __PKGNAME__.MainWindow.locked
 end
 
-function Chatter.save()
-  Chatter.MainWindow:save()
-  decho(Chatter.style.message.colour .. "Chatter window saved.\n")
+function __PKGNAME__.save()
+  __PKGNAME__.MainWindow:save()
+  decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window saved.\n")
 end
 
-function Chatter.load()
-  Chatter.MainWindow:load()
-  decho(Chatter.style.message.colour .. "Chatter window loaded.\n")
+function __PKGNAME__.load()
+  __PKGNAME__.MainWindow:load()
+  decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window loaded.\n")
 end
 
-function Chatter.loadGroups()
-  Chatter.groups = Chatter.glu.preferences.load(nil, "Chatter.Groups.lua", {})
+function __PKGNAME__.loadGroups()
+  __PKGNAME__.groups = glu.preferences.load(nil, "__PKGNAME__.Groups.lua", {})
 
-  Chatter.saveGroups()
+  __PKGNAME__.saveGroups()
 end
 
-function Chatter.saveGroups()
-  Chatter.glu.preferences.save(nil, "Chatter.Groups.lua", Chatter.groups)
+function __PKGNAME__.saveGroups()
+  glu.preferences.save(nil, "__PKGNAME__.Groups.lua", __PKGNAME__.groups)
 end
 
-function Chatter.buildUi()
-  Chatter.MainWindow = Chatter.MainWindow or Adjustable.Container:new({
-    name = Chatter.config.name .. ".MainWindow",
+function __PKGNAME__.buildUi()
+  __PKGNAME__.MainWindow = __PKGNAME__.MainWindow or Adjustable.Container:new({
+    name = "__PKGNAME__.MainWindow",
     x = 0,
     y = 0,
     width = 400,
@@ -313,127 +313,131 @@ function Chatter.buildUi()
     buttonFontSize = 10,
     buttonsize = 20,
   })
-  Chatter.MainWindow:setTitle(Chatter.config.name, Chatter.style.title.colour, Chatter.style.title.format)
-  Chatter.addWidget(Chatter.MainWindow)
-  Chatter.MainWindow:hide()
+  __PKGNAME__.MainWindow:setTitle(
+    "__PKGNAME__",
+    __PKGNAME__.style.title.colour,
+    __PKGNAME__.style.title.format
+  )
+  __PKGNAME__.addWidget(__PKGNAME__.MainWindow)
+  __PKGNAME__.MainWindow:hide()
 
   -- This is the container that holds everything
-  Chatter.Container = Chatter.Container or Geyser.VBox:new({
-    name = Chatter.config.name .. ".Container",
+  __PKGNAME__.Container = __PKGNAME__.Container or Geyser.VBox:new({
+    name = "__PKGNAME__.Container",
     x = 5,
     y = 5,
     width = "100%-10",
     height = "100%-10",
-  }, Chatter.MainWindow)
-  Chatter.addWidget(Chatter.Container)
+  }, __PKGNAME__.MainWindow)
+  __PKGNAME__.addWidget(__PKGNAME__.Container)
 
   -- Adding a label so we don't have wonky spaces between the tabs
-  Chatter.TabBarFiller = Chatter.TabBarFiller or Geyser.Label:new({
-    name = Chatter.config.name .. ".TabBarFiller",
+  __PKGNAME__.TabBarFiller = __PKGNAME__.TabBarFiller or Geyser.Label:new({
+    name = "__PKGNAME__.TabBarFiller",
     y = 0,
     x = 0,
-    height = Chatter.config.metrics.tabs.height,
-    width = "100%-" .. tostring(tonumber(Chatter.MainWindow.buttonsize) * 3),
+    height = __PKGNAME__.config.metrics.tabs.height,
+    width = "100%-" .. tostring(tonumber(__PKGNAME__.MainWindow.buttonsize) * 3),
     v_policy = Geyser.Fixed,
     h_policy = Geyser.Fixed,
-    stylesheet = Chatter.style.header.background,
-  }, Chatter.Container)
-  Chatter.addWidget(Chatter.TabBarFiller)
+    stylesheet = __PKGNAME__.style.header.background,
+  }, __PKGNAME__.Container)
+  __PKGNAME__.addWidget(__PKGNAME__.TabBarFiller)
 
   -- This is the header that contains all of the "tabs"
-  Chatter.TabBar = Chatter.TabBar or Geyser.HBox:new({
-      name = Chatter.config.name .. ".TabBar",
+  __PKGNAME__.TabBar = __PKGNAME__.TabBar or Geyser.HBox:new({
+      name = "__PKGNAME__.TabBar",
       x = 0,
       y = 0,
       width = "100%",
       height = "100%",
     },
-    Chatter.TabBarFiller)
-  Chatter.addWidget(Chatter.TabBar)
+    __PKGNAME__.TabBarFiller)
+  __PKGNAME__.addWidget(__PKGNAME__.TabBar)
 
   -- This the label that contains all of the miniconsoles
-  Chatter.Body = Chatter.Body or Geyser.Label:new({
-    name = Chatter.config.name .. ".Body",
+  __PKGNAME__.Body = __PKGNAME__.Body or Geyser.Label:new({
+    name = "__PKGNAME__.Body",
     stylesheet = "background-color:rgba(18,22,25,100%);",
     x = 0,
     width = "100%",
-  }, Chatter.Container)
-  Chatter.addWidget(Chatter.Body)
+  }, __PKGNAME__.Container)
+  __PKGNAME__.addWidget(__PKGNAME__.Body)
 
   -- Add the tabs
-  Chatter.tabs = Chatter.tabs or {}
+  __PKGNAME__.tabs = __PKGNAME__.tabs or {}
 
   -- Sort the categories by order
-  local names = table.keys(Chatter.config.category.type) or {}
+  local names = table.keys(__PKGNAME__.config.category.type) or {}
   table.sort(names, function(a, b)
-    return Chatter.config.category.type[a].order < Chatter.config.category.type[b].order
+    return __PKGNAME__.config.category.type[a].order < __PKGNAME__.config.category.type[b].order
   end)
 
   -- Create and add the tabs
   for _, name in pairs(names) do
-    local display_name = Chatter.config.category.type[name].display
+    local display_name = __PKGNAME__.config.category.type[name].display
 
     -- Create the tab
-    Chatter.tabs[name] = Chatter.tabs[name] or {}
-    Chatter.tabs[name].tab = Geyser.Button:new({
-      name = Chatter.config.name .. ".Tabs." .. name,
+    __PKGNAME__.tabs[name] = __PKGNAME__.tabs[name] or {}
+    __PKGNAME__.tabs[name].tab = Geyser.Button:new({
+      name = "__PKGNAME__.Tabs." .. name,
       msg = display_name,
-      tooltip = Chatter.config.category.type[name].tooltip,
-      clickFunction = function() Chatter.click(name) end,
-    }, Chatter.TabBar)
-    Chatter.tabs[name].tab:echo(nil, "nocolor", nil)
-    Chatter.tabs[name].tab:setFontSize(10)
-    Chatter.tabs[name].tab:setStyle(Chatter.style.tabs.unselected)
-    setLabelCursor(Chatter.config.name .. ".Tabs." .. name, 13)
-    Chatter.fade(Chatter.tabs[name].tab, "out", true)
-    Chatter.addWidget(Chatter.tabs[name].tab)
+      tooltip = __PKGNAME__.config.category.type[name].tooltip,
+      clickFunction = function() __PKGNAME__.click(name) end,
+    }, __PKGNAME__.TabBar)
+    __PKGNAME__.tabs[name].tab:echo(nil, "nocolor", nil)
+    __PKGNAME__.tabs[name].tab:setFontSize(10)
+    __PKGNAME__.tabs[name].tab:setStyle(__PKGNAME__.style.tabs.unselected)
+    setLabelCursor("__PKGNAME__.Tabs." .. name, 13)
+    __PKGNAME__.fade(__PKGNAME__.tabs[name].tab, "out", true)
+    __PKGNAME__.addWidget(__PKGNAME__.tabs[name].tab)
 
     -- Create the console
-    Chatter.tabs[name].console = Chatter.tabs[name].console or
+    __PKGNAME__.tabs[name].console = __PKGNAME__.tabs[name].console or
         Geyser.MiniConsole:new({
           x = 0,
           y = 5,
           width = "100%",
           height = "100%-2",
-          name = Chatter.config.name .. ".Tabs." .. name .. ".Console",
+          name = "__PKGNAME__.Tabs." .. name .. ".Console",
           autoWrap = true,
           fontName = "Ubuntu",
-          fontSize = Chatter.prefs.size or 9,
-        }, Chatter.Body)
-    Chatter.tabs[name].console:setBackgroundImage(Chatter.style.console.background, 4)
-    Chatter.addWidget(Chatter.tabs[name].console)
-    Chatter.tabs[name].console:hide()
+          fontSize = __PKGNAME__.prefs.size or 9,
+        }, __PKGNAME__.Body)
+    __PKGNAME__.tabs[name].console:setBackgroundImage(__PKGNAME__.style.console.background, 4)
+    __PKGNAME__.addWidget(__PKGNAME__.tabs[name].console)
+    __PKGNAME__.tabs[name].console:hide()
   end
 
-  Chatter.MainWindow:show()
+  __PKGNAME__.MainWindow:show()
   -- Show the default tab
-  Chatter.click("all", true)
+  __PKGNAME__.click("all", true)
 end
 
-function Chatter.dismantleUi()
-  for _, v in ipairs(Chatter.widget) do
+function __PKGNAME__.dismantleUi()
+  for _, v in ipairs(__PKGNAME__.widget) do
     if v ~= nil then
       -- We will do this last.
-      if v.name ~= Chatter.config.name .. ".MainWindow" then
+      if v.name ~= "__PKGNAME__.MainWindow" then
         v:hide()
         v = nil
       end
     end
   end
-  Chatter.widget = nil
+  __PKGNAME__.widget = nil
 
-  if Chatter.MainWindow then
-    Chatter.MainWindow:delete()
+  if __PKGNAME__.MainWindow then
+    __PKGNAME__.MainWindow:delete()
   end
 end
 
-function Chatter.chatterCommand(_, input)
+function __PKGNAME__.command(_, input)
   if input == "" then
     echo("\n")
     ---@diagnostic disable-next-line: undefined-global
     helper.print({
-      text = Chatter.help.topics.usage,
-      styles = Chatter.help_styles
+      text = __PKGNAME__.help.topics.usage,
+      styles = __PKGNAME__.help_styles
     })
     return
   end
@@ -444,63 +448,63 @@ function Chatter.chatterCommand(_, input)
     local channel = subcommand:trim()
     local group = rex.match(value, "^(?:to|from)\\s*(.+)$")
 
-    if not group or not Chatter.config.category.type[group] then
+    if not group or not __PKGNAME__.config.category.type[group] then
       echo("Invalid group: " .. group .. "\n")
       return
     end
 
     if command == "add" then
-      Chatter.addChannel(channel, group)
+      __PKGNAME__.addChannel(channel, group)
     else
-      Chatter.removeChannel(channel, group)
+      __PKGNAME__.removeChannel(channel, group)
     end
   elseif command == "list" then
-    Chatter.listChannels(subcommand)
+    __PKGNAME__.listChannels(subcommand)
   elseif command == "mute" then
-    Chatter.muteChannel(subcommand)
+    __PKGNAME__.muteChannel(subcommand)
   elseif command == "unmute" then
-    Chatter.unmuteChannel(subcommand)
+    __PKGNAME__.unmuteChannel(subcommand)
   elseif command == "toggle" then
-    Chatter.toggle()
+    __PKGNAME__.toggle()
   elseif command == "show" then
-    Chatter.show()
+    __PKGNAME__.show()
   elseif command == "hide" then
-    Chatter.hide()
+    __PKGNAME__.hide()
   elseif command == "flash" then
-    Chatter.flash()
+    __PKGNAME__.flash()
   elseif command == "lock" then
-    Chatter.lock()
+    __PKGNAME__.lock()
   elseif command == "unlock" then
-    Chatter.unlock()
+    __PKGNAME__.unlock()
   elseif command == "minimize" then
-    Chatter.minimize()
+    __PKGNAME__.minimize()
   elseif command == "restore" then
-    Chatter.restore()
+    __PKGNAME__.restore()
   elseif command == "save" then
-    Chatter.save()
+    __PKGNAME__.save()
   elseif command == "load" then
-    Chatter.load()
+    __PKGNAME__.load()
   elseif command == "size" then
-    Chatter.setFontSize(subcommand)
+    __PKGNAME__.setFontSize(subcommand)
   else
     echo("Invalid command: " .. command .. "\n")
   end
 end
 
-function Chatter.setFontSize(size)
-  for _, tab in pairs(Chatter.tabs) do
+function __PKGNAME__.setFontSize(size)
+  for _, tab in pairs(__PKGNAME__.tabs) do
     tab.console:setFontSize(tonumber(size))
   end
-  Chatter.savePrefs()
+  __PKGNAME__.savePrefs()
 
-  cecho("Chatter font size set to <b>" .. tostring(size) .. "</b>.\n")
+  cecho("__PKGNAME__ font size set to <b>" .. tostring(size) .. "</b>.\n")
 end
 
-function Chatter.addChannel(channel, group)
+function __PKGNAME__.addChannel(channel, group)
   local element
 
-  if Chatter.groups[channel] then
-    element = Chatter.groups[channel]
+  if __PKGNAME__.groups[channel] then
+    element = __PKGNAME__.groups[channel]
     cecho("Channel <b>" .. channel .. "</b> already exists in group <b>" .. element.group .. "</b>.\n")
     if element.group ~= group then
       element.group = group
@@ -512,14 +516,14 @@ function Chatter.addChannel(channel, group)
     element = { group = group, muted = false }
   end
 
-  Chatter.groups[channel] = element
-  Chatter.saveGroups()
+  __PKGNAME__.groups[channel] = element
+  __PKGNAME__.saveGroups()
 
   cecho("Channel <b>" .. channel .. "</b> added to group <b>" .. group .. "</b>.\n")
 end
 
-function Chatter.removeChannel(channel, group)
-  local element = Chatter.groups[channel]
+function __PKGNAME__.removeChannel(channel, group)
+  local element = __PKGNAME__.groups[channel]
   if not element then
     cecho("Channel <b>" .. channel .. "</b> is not in any group.\n")
     return
@@ -530,14 +534,14 @@ function Chatter.removeChannel(channel, group)
     return
   end
 
-  Chatter.groups[channel] = nil
-  Chatter.saveGroups()
+  __PKGNAME__.groups[channel] = nil
+  __PKGNAME__.saveGroups()
 
   cecho("Channel <b>" .. channel .. "</b> removed from group <b>" .. group .. "</b>.\n")
 end
 
-function Chatter.muteChannel(channel)
-  local element = Chatter.groups[channel]
+function __PKGNAME__.muteChannel(channel)
+  local element = __PKGNAME__.groups[channel]
   if not element then
     cecho("Channel <b>" .. channel .. "</b> is not in any group. You must add it to a group first.\n")
     return
@@ -549,13 +553,13 @@ function Chatter.muteChannel(channel)
   end
 
   element.muted = true
-  Chatter.saveGroups()
+  __PKGNAME__.saveGroups()
 
   cecho("Channel <b>" .. channel .. "</b> muted.\n")
 end
 
-function Chatter.unmuteChannel(channel)
-  local element = Chatter.groups[channel]
+function __PKGNAME__.unmuteChannel(channel)
+  local element = __PKGNAME__.groups[channel]
   if not element then
     cecho("Channel <b>" .. channel .. "</b> is not in any group. You must add it to a group first.\n")
     return
@@ -567,40 +571,40 @@ function Chatter.unmuteChannel(channel)
   end
 
   element.muted = false
-  Chatter.saveGroups()
+  __PKGNAME__.saveGroups()
 
   cecho("Channel <b>" .. channel .. "</b> unmuted.\n")
 end
 
-function Chatter.listChannels(group)
-  local groups = Chatter.groups
+function __PKGNAME__.listChannels(group)
+  local groups = __PKGNAME__.groups
 
   if not group or group == "" then
     group = "all"
   end
 
   if group == "all" then
-    local group_names = Chatter.glu.table.map(
-      Chatter.glu.table.values(groups),
+    local group_names = glu.table.map(
+      glu.table.values(groups),
       function(k, v) return v.group end
     )
-    groups = Chatter.glu.table.n_distinct(group_names)
+    groups = glu.table.n_distinct(group_names)
   else
     groups = { group }
   end
 
   for _, g in spairs(groups) do
     local channels = {}
-    for channel, element in pairs(Chatter.groups) do
+    for channel, element in pairs(__PKGNAME__.groups) do
       if element.group == g then
-        Chatter.glu.table.push(channels, channel)
+        glu.table.push(channels, channel)
       end
     end
 
     table.sort(channels, function(a, b) return a < b end)
 
-    channels = Chatter.glu.table.map(channels, function(_, v)
-      if Chatter.groups[v].muted then
+    channels = glu.table.map(channels, function(_, v)
+      if __PKGNAME__.groups[v].muted then
         return "[" .. v .. "]"
       end
       return v
@@ -612,8 +616,8 @@ function Chatter.listChannels(group)
   end
 end
 
-function Chatter.fade(widget, direction, immediate)
-  local tab_styles = Chatter.style.tabs
+function __PKGNAME__.fade(widget, direction, immediate)
+  local tab_styles = __PKGNAME__.style.tabs
   local widget_name = widget.name
 
   local curr_fg, target_fg, curr_bg, target_bg
@@ -636,23 +640,23 @@ function Chatter.fade(widget, direction, immediate)
   local step = immediate and 100 or 5
   local state = 0
 
-  local timer_name = Chatter.config.prefix .. "Fade_" .. widget_name
-  if not table.index_of(getNamedTimers(Chatter.config.name), timer_name) then
-    deleteNamedTimer(Chatter.config.name, timer_name)
+  local timer_name = "__PKGNAME__:Fade_" .. widget_name
+  if not table.index_of(getNamedTimers("__PKGNAME__"), timer_name) then
+    deleteNamedTimer("__PKGNAME__", timer_name)
   end
 
-  registerNamedTimer(Chatter.config.name, timer_name, delay, function()
+  registerNamedTimer("__PKGNAME__", timer_name, delay, function()
     state = state + step
     local style_string
     local fg_colour_string, bg_colour_string
     if state >= 100 then
-      style_string = Chatter.style.tabs.selected
+      style_string = __PKGNAME__.style.tabs.selected
       fg_colour_string = "rgb(" .. table.concat(target_fg, ",") .. ")"
       bg_colour_string = "rgb(" .. table.concat(target_bg, ",") .. ")"
     else
-      curr_fg = Chatter.glu.colour.interpolate(curr_fg, target_fg, state)
-      curr_bg = Chatter.glu.colour.interpolate(curr_bg, target_bg, state)
-      style_string = Chatter.style.tabs.unselected
+      curr_fg = glu.colour.interpolate(curr_fg, target_fg, state)
+      curr_bg = glu.colour.interpolate(curr_bg, target_bg, state)
+      style_string = __PKGNAME__.style.tabs.unselected
       fg_colour_string = "rgb(" .. table.concat(curr_fg, ",") .. ")"
       bg_colour_string = "rgb(" .. table.concat(curr_bg, ",") .. ")"
     end
@@ -661,113 +665,113 @@ function Chatter.fade(widget, direction, immediate)
     widget:setStyle(style)
 
     if state >= 100 then
-      deleteNamedTimer(Chatter.config.name, timer_name)
+      deleteNamedTimer("__PKGNAME__", timer_name)
     end
   end, true)
 end
 
-function Chatter.click(tab_name, force)
-  if not Chatter.tabs[tab_name] then return end
+function __PKGNAME__.click(tab_name, force)
+  if not __PKGNAME__.tabs[tab_name] then return end
 
   -- Hide the current tab
-  local current_tab_name = Chatter.current
-  local current_tab = Chatter.tabs[current_tab_name].tab
-  local current_console = Chatter.tabs[current_tab_name].console
+  local current_tab_name = __PKGNAME__.current
+  local current_tab = __PKGNAME__.tabs[current_tab_name].tab
+  local current_console = __PKGNAME__.tabs[current_tab_name].console
 
   if current_tab_name == tab_name and not force then
     return
   end
 
-  Chatter.fade(current_tab, "out")
+  __PKGNAME__.fade(current_tab, "out")
   current_console:hide()
 
   -- Show the new tab
-  local new_tab = Chatter.tabs[tab_name].tab
-  Chatter.fade(new_tab, "in")
+  local new_tab = __PKGNAME__.tabs[tab_name].tab
+  __PKGNAME__.fade(new_tab, "in")
 
-  local new_console = Chatter.tabs[tab_name].console
+  local new_console = __PKGNAME__.tabs[tab_name].console
   new_console:show()
 
   -- Set the new tab
-  Chatter.current = tab_name
+  __PKGNAME__.current = tab_name
 end
 
 -- Echo to the console
-function Chatter.echo(groups, msg)
+function __PKGNAME__.echo(groups, msg)
   for _, name in pairs(groups) do
-    Chatter.tabs[name].console:decho(msg)
+    __PKGNAME__.tabs[name].console:decho(msg)
 
     -- Enable the scrollbar if the number of lines exceeds the height
-    if Chatter.tabs[name].console:getLineCount() > Chatter.tabs[name].console:getRowCount() then
-      Chatter.tabs[name].console:enableScrollBar()
+    if __PKGNAME__.tabs[name].console:getLineCount() > __PKGNAME__.tabs[name].console:getRowCount() then
+      __PKGNAME__.tabs[name].console:enableScrollBar()
     else
-      Chatter.tabs[name].console:disableScrollBar()
+      __PKGNAME__.tabs[name].console:disableScrollBar()
     end
   end
 end
 
 -- Log to disk
-function Chatter.log(groups, msg)
-  display("history_file: " .. Chatter.config.history_file)
-
+function __PKGNAME__.log(groups, msg)
   for _, name in pairs(groups) do
-    if not Chatter.history[name] then Chatter.history[name] = {} end
-    Chatter.glu.table.push(Chatter.history[name], msg)
+    if not __PKGNAME__.history[name] then __PKGNAME__.history[name] = {} end
+    glu.table.push(__PKGNAME__.history[name], msg)
   end
 
-  table.save(Chatter.config.history_file, Chatter.history)
+  table.save(__PKGNAME__.config.history_file, __PKGNAME__.history)
 end
 
 -- Event Handlers
 -- Register/Deregister event handlers
-function Chatter.registerEventHandlers()
-  registerNamedEventHandler(Chatter.config.name,
-    Chatter.config.prefix .. "ReceiveComm",
+function __PKGNAME__.registerEventHandlers()
+  registerNamedEventHandler(
+    "__PKGNAME__",
+    "ReceiveComm",
     "gmcp.Comm.Channel.Text",
     function(event)
-      Chatter.receiveComm(event)
+      __PKGNAME__.receiveComm(event)
     end
   )
   registerNamedEventHandler(
-    Chatter.config.name,
-    Chatter.config.prefix .. "ConnectionScript",
+    "__PKGNAME__",
+    "ConnectionScript",
     "sysConnectionEvent",
-    Chatter.connectionScript
+    __PKGNAME__.connectionScript
   )
   registerNamedEventHandler(
-    Chatter.config.name,
-    Chatter.config.prefix .. "Uninstall",
+    "__PKGNAME__",
+    "Uninstall",
     "sysUninstall",
-    Chatter.uninstall
+    __PKGNAME__.uninstall
   )
   registerNamedEventHandler(
-    Chatter.config.name,
-    "chatter_command",
-    "chatter_command",
-    Chatter.chatterCommand
+    "__PKGNAME__",
+    "command",
+    "__PKGNAME__:command",
+    __PKGNAME__.command
   )
 end
 
-function Chatter.unregisterEventHandlers()
-  deleteNamedEventHandler(Chatter.config.name, Chatter.config.prefix .. "ReceiveComm")
+function __PKGNAME__.unregisterEventHandlers()
+  deleteNamedEventHandler("__PKGNAME__", "ReceiveComm")
 end
 
 -- This connection handler announces to Threshold that we would like to receive
 -- Comm GMCP information
-function Chatter.connectionScript()
-  Chatter.unregisterEventHandlers()
-  Chatter.registerEventHandlers()
-  local prefix = Chatter.config.prefix
+function __PKGNAME__.connectionScript()
+  __PKGNAME__.unregisterEventHandlers()
+  __PKGNAME__.registerEventHandlers()
 
-  if not resumeNamedTimer(Chatter.config.name, prefix .. "ConnectionTimer") then
-    registerNamedTimer(Chatter.config.name, prefix .. "ConnectionTimer", 1, function()
+  local prefix = "__PKGNAME__:"
+
+  if not resumeNamedTimer("__PKGNAME__", "ConnectionTimer") then
+    registerNamedTimer("__PKGNAME__", "ConnectionTimer", 1, function()
       sendGMCP([[Core.Supports.Add ["Comm 1"] ]])
-      deleteNamedTimer(Chatter.config.name, prefix .. "ConnectionTimer")
+      deleteNamedTimer("__PKGNAME__", "ConnectionTimer")
     end)
   end
 end
 
-function Chatter.clearConsole(event, menu, window, startCol, startRow, endCol, endRow)
+function __PKGNAME__.clearConsole(event, menu, window, startCol, startRow, endCol, endRow)
   if window == "main" then
     window = nil
   end
@@ -778,59 +782,59 @@ function Chatter.clearConsole(event, menu, window, startCol, startRow, endCol, e
 end
 
 -- This is the uninstall routine. Cleans everything up!
-function Chatter.uninstall(event, package)
-  if package ~= Chatter.config.name then return end
+function __PKGNAME__.uninstall(event, package)
+  if package ~= "__PKGNAME__" then return end
 
-  deleteAllNamedTimers(Chatter.config.name)
-  Chatter.unregisterEventHandlers()
-  deleteNamedEventHandler(Chatter.config.name, Chatter.config.prefix .. "Uninstall")
-  Chatter.dismantleUi()
-  Chatter.glu = nil
-  cecho("<red>You have uninstalled " .. Chatter.config.name .. ".\n")
-  Chatter = nil
+  deleteAllNamedTimers("__PKGNAME__")
+  __PKGNAME__.unregisterEventHandlers()
+  deleteNamedEventHandler("__PKGNAME__", "Uninstall")
+  __PKGNAME__.dismantleUi()
+  cecho("<red>[__PKGNAME__]<r> You have uninstalled __PKGNAME__.\n")
+  __PKGNAME__ = nil
 end
 
-function Chatter.start(event, package)
-  if package and package ~= Chatter.config.name then return end
+function __PKGNAME__.start(event, package)
+  if package and package ~= "__PKGNAME__" then return end
 
   local _, _, connected = getConnectionInfo()
 
   if event == "sysInstall" then
-    if package ~= Chatter.config.name then return end
-    Chatter.first_time = true
+    if package ~= "__PKGNAME__" then return end
 
-    deleteNamedEventHandler(Chatter.config.name, Chatter.config.prefix .. "Install")
+    __PKGNAME__.first_time = true
+
+    deleteNamedEventHandler("__PKGNAME__", "__PKGNAME__:Install")
     if connected then
-      Chatter.connectionScript()
+      __PKGNAME__.connectionScript()
     end
   end
 
-  local deps = Chatter.glu.dependency_queue(
-    Chatter.config.dependencies,
+  local deps = glu.dependency_queue(
+    __PKGNAME__.config.dependencies,
     function(status, message)
       if not status then
         if message then
           cecho("<red>" .. message .. "\n")
         else
-          cecho("<red>Failed to load dependencies for " .. Chatter.config.package_name .. "\n")
+          cecho("<red>Failed to load dependencies for __PKGNAME__.\n")
         end
         return
       end
 
-      Chatter.loadPrefs()
-      Chatter.loadGroups()
-      Chatter.buildStyles()
-      Chatter.buildUi()
-      Chatter.registerEventHandlers()
+      __PKGNAME__.loadPrefs()
+      __PKGNAME__.loadGroups()
+      __PKGNAME__.buildStyles()
+      __PKGNAME__.buildUi()
+      __PKGNAME__.registerEventHandlers()
 
       local _, _, connected2 = getConnectionInfo()
       if connected2 then
-        Chatter.connectionScript()
+        __PKGNAME__.connectionScript()
       end
 
-      if Chatter.first_time == true then
-        tempTimer(0.1, function() raiseEvent("chatter_command", "") end)
-        Chatter.first_time = false
+      if __PKGNAME__.first_time == true then
+        tempTimer(0.1, function() raiseEvent("__PKGNAME__:command", "") end)
+        __PKGNAME__.first_time = false
       end
     end
   )
@@ -843,16 +847,16 @@ end
 -- Help
 -- ----------------------------------------------------------------------------
 
-Chatter.help_styles = {
+__PKGNAME__.help_styles = {
   h1 = "sea_green",
   h2 = "dark_sea_green",
 }
 
-Chatter.help = {
-  name = Chatter.config.package_name,
+__PKGNAME__.help = {
+  name = "__PKGNAME__",
   topics = {
     usage = f [[
-<h1><u>{Chatter.config.package_name} v{Chatter.config.package_version}</u></h1>
+<h1><u>__PKGNAME__ v__VERSION__</u></h1>
 
 Syntax: <h2>chatter</h2> [<h2>command</h2>]
 
@@ -886,18 +890,18 @@ Syntax: <h2>chatter</h2> [<h2>command</h2>]
 }
 
 registerNamedEventHandler(
-  Chatter.config.name,
-  Chatter.config.prefix .. "Install",
+  "__PKGNAME__",
+  "install",
   "sysInstall",
-  Chatter.start,
+  __PKGNAME__.start,
   true
 )
 
 registerNamedEventHandler(
-  Chatter.config.name,
-  Chatter.config.prefix .. "LoadEvent",
+  "__PKGNAME__",
+  "LoadEvent",
   "sysLoadEvent",
-  function(_) Chatter.start(_, Chatter.config.name) end
+  function(_) __PKGNAME__.start(_, "__PKGNAME__") end
 )
 
 addMouseEvent(
@@ -906,9 +910,10 @@ addMouseEvent(
   "Clear Console",
   "Clear the entire history of this console"
 )
+
 registerNamedEventHandler(
-  Chatter.config.name,
-  "Console.Clear",
+  "__PKGNAME__",
   "ClearConsole",
-  Chatter.clearConsole
+  "__PKGNAME__:ClearConsole",
+  __PKGNAME__.clearConsole
 )
