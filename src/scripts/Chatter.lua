@@ -1,5 +1,4 @@
 ---@class Glu
-local glu = require("__PKGNAME__/vendor/Glu-single")("__PKGNAME__")
 
 __PKGNAME__ = __PKGNAME__ or {
   config = {
@@ -35,8 +34,11 @@ __PKGNAME__ = __PKGNAME__ or {
   tabs = {},
   widget = {},
   prefs = {},
-  history = {}
+  history = {},
+  glu = require("__PKGNAME__/vendor/Glu-single")("__PKGNAME__")
 }
+
+local glu = __PKGNAME__.glu
 
 -- Channel management
 function __PKGNAME__.receiveComm(event)
