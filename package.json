@@ -1,7 +1,18 @@
 {
+  "name": "chatter",
+  "version": "2.4.0",
+  "description": "Manage messages on channels in a separate window using GMCP.",
   "scripts": {
-    "build": "npx @gesslar/muddy",
-    "watch": "npx @gesslar/muddy -w"
+    "build": "npx -y muddy",
+    "watch": "npx -y muddy -w",
+    "major": "npx -y muddy version major --package",
+    "minor": "npx -y muddy version minor --package",
+    "patch": "npx -y muddy version patch --package",
+    "update": "npx -y npm-check-updates -u && npm install",
+    "pr": "gt submit -p --ai"
   },
-  "license": "0BSD"
+  "license": "0BSD",
+  "devDependencies": {
+    "@gesslar/muddy": "^3.3.0"
+  }
 }

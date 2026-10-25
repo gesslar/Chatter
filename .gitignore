@@ -2,3 +2,5 @@
 # in the repo
 build/
 .output
+node_modules
+.vscode/settings.json
