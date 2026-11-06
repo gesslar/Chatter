@@ -84,13 +84,13 @@ function __PKGNAME__.addWidget(widget)
 end
 
 function __PKGNAME__.buildStyles()
-  local bg = {0, 50, 0}
+  local bg = { 0, 50, 0 }
   local center = "qproperty-alignment: 'AlignCenter | AlignVCenter';" -- Center text
   local bold = "font-weight: bold;"                                   -- Bold text
 
-  local bg_selected = {82, 100, 0}
+  local bg_selected = { 82, 100, 0 }
   local fg_selected = glu.colour.lighten_or_darken(bg_selected, bg_selected, 85)
-  local bg_unselected = {0, 50, 0}
+  local bg_unselected = { 0, 50, 0 }
   local fg_unselected = glu.colour.lighten_or_darken(bg_unselected, bg_unselected, 85)
   local tab = {
     fg = {
@@ -778,13 +778,15 @@ function __PKGNAME__.connectionScript()
 end
 
 function __PKGNAME__.clearConsole(event, menu, window, startCol, startRow, endCol, endRow)
-  if window == "main" then
-    window = nil
+  -- Only clear consoles that belong to us
+  for _, tab in pairs(__PKGNAME__.tabs or {}) do
+    if tab.console and tab.console.name == window then
+      clearWindow(window)
+      return
+    end
   end
 
-  if window then
-    clearWindow(window)
-  end
+  cecho("<sea_green>That is not a Chatter console.\n<r>")
 end
 
 -- This is the uninstall routine. Cleans everything up!
