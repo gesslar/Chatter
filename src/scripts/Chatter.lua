@@ -24,9 +24,9 @@ __PKGNAME__ = __PKGNAME__ or {
     },
     -- Every colour in the UI is derived from these.
     palette = {
-      base = { 18, 22, 25 },  -- window and body background
-      tab = { 0, 50, 0 },     -- tab bar and unselected tabs
-      accent = { 82, 100, 0 }, -- selected tab, title, and intro
+      base = { 18, 22, 25 },           -- window and body background
+      tab = { 0, 50, 0 },              -- tab bar and unselected tabs
+      accent = { 82, 100, 0 },         -- selected tab, title, and intro
       message = color_table.sea_green, -- status messages in the main console
     },
     style = {},
@@ -827,7 +827,7 @@ function __PKGNAME__.uninstall(event, package)
   -- Drop the cached module so a reinstall loads the Glu it ships with.
   -- (`package` is our argument here, hence _G.)
   _G.package.loaded["__PKGNAME__/vendor/Glu-single"] = nil
-  cecho("<red>[__PKGNAME__]<r> You have uninstalled __PKGNAME__.\n")
+  cecho("<sea_green>[__PKGNAME__]<r> You have uninstalled __PKGNAME__.\n")
   __PKGNAME__ = nil
 end
 
