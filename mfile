@@ -5,5 +5,8 @@
   "author": "gesslar",
   "icon": "chat.png",
   "dependencies": "",
-  "outputFile": true
+  "outputFile": true,
+  "ignore": [
+    "resources/test/**"
+  ]
 }

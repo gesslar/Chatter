@@ -22,12 +22,20 @@ __PKGNAME__ = __PKGNAME__ or {
         help = { display = "Help", tooltip = "Help channels", order = 5 },
       },
     },
+    -- Every colour in the UI is derived from these.
+    palette = {
+      base = { 18, 22, 25 },  -- window and console background
+      tab = { 0, 50, 0 },     -- tab bar and unselected tabs
+      accent = { 82, 100, 0 }, -- selected tab, title, and intro
+      message = color_table.sea_green, -- status messages in the main console
+    },
     style = {},
-    intro = "<82,100,0>○",
+    intro = "○",
     enable_intro = false,
     defaults = {
       size = 12,
     },
+    font_size = { min = 6, max = 32 },
   },
   current = "all",
   groups = {},
@@ -40,6 +48,22 @@ __PKGNAME__ = __PKGNAME__ or {
 
 local glu = __PKGNAME__.glu
 
+-- Colour formatting
+--- Formats an RGB table as a decho colour tag, e.g. "<82,100,0>".
+function __PKGNAME__.dtag(rgb)
+  return "<" .. table.concat(rgb, ",") .. ">"
+end
+
+--- Formats an RGB table for a Qt stylesheet. Without alpha, this is a hex
+--- colour; with alpha (0-100), it is an rgba() value.
+function __PKGNAME__.css(rgb, alpha)
+  if alpha == nil then
+    return glu.colour.to_hex(rgb)
+  end
+
+  return "rgba(" .. table.concat(rgb, ",") .. "," .. alpha .. "%)"
+end
+
 -- Channel management
 function __PKGNAME__.receiveComm(event)
   local channel = gmcp.Comm.Channel.Text.channel or ""
@@ -51,13 +75,9 @@ function __PKGNAME__.receiveComm(event)
   text = rex.gsub(text, "[\\r\\n]", " ") --[[@as string]]
 
   if __PKGNAME__.config.enable_intro == true then
-    text = __PKGNAME__.config.intro .. "<r> " .. text .. "\n"
+    text = __PKGNAME__.style.intro .. "<r> " .. text .. "\n"
   else
-    text = string.format(
-      "<%s>%s\n",
-      table.concat(__PKGNAME__.style.console.default_fg, ","),
-      text
-    ) --[[@as string]]
+    text = __PKGNAME__.style.console.default_fg .. text .. "\n"
   end
 
   local group, groups = __PKGNAME__.groups[channel], {}
@@ -84,30 +104,40 @@ function __PKGNAME__.addWidget(widget)
 end
 
 function __PKGNAME__.buildStyles()
-  local bg = { 0, 50, 0 }
+  local palette = __PKGNAME__.config.palette
+  local css = __PKGNAME__.css
+  local dtag = __PKGNAME__.dtag
+
   local center = "qproperty-alignment: 'AlignCenter | AlignVCenter';" -- Center text
   local bold = "font-weight: bold;"                                   -- Bold text
 
-  local bg_selected = { 82, 100, 0 }
-  local fg_selected = glu.colour.lighten_or_darken(bg_selected, bg_selected, 85)
-  local bg_unselected = { 0, 50, 0 }
-  local fg_unselected = glu.colour.lighten_or_darken(bg_unselected, bg_unselected, 85)
+  -- Tab text is a contrasting shade of its own background.
   local tab = {
     fg = {
-      selected = fg_selected,
-      unselected = fg_unselected,
+      selected = glu.colour.lighten_or_darken(palette.accent, palette.accent, 85),
+      unselected = glu.colour.lighten_or_darken(palette.tab, palette.tab, 85),
     },
     bg = {
-      selected = bg_selected,
-      unselected = bg_unselected,
+      selected = palette.accent,
+      unselected = palette.tab,
     }
   }
-  local title_colour = tab.bg.selected
-  local title_format = "l13b"
+
+  local button = glu.colour.lighten(palette.base, 15)
 
   __PKGNAME__.style = {
+    window = {
+      adjLabel = "background-color:" .. css(palette.base) .. "; border: 1px solid " .. css(palette.base) .. ";",
+      button = [[
+      QLabel{ border-radius: 7px; background-color: ]] .. css(button, 50) .. [[;}
+      QLabel::hover{ background-color: ]] .. css(button) .. [[;}
+      ]],
+    },
     header = {
-      background = "background-color: rgba(" .. table.concat(bg, ",") .. ", 100%);",
+      background = "background-color: " .. css(palette.tab) .. ";",
+    },
+    body = {
+      background = "background-color: " .. css(palette.base) .. ";",
     },
     tabs = {
       selected = center .. " " .. bold,
@@ -115,16 +145,17 @@ function __PKGNAME__.buildStyles()
       colours = tab,
     },
     console = {
-      default_fg = tab.fg.unselected,
+      default_fg = dtag(tab.fg.unselected),
       background = " ",
     },
     title = {
-      colour = string.format("<%s>", table.concat(title_colour, ",")),
-      format = title_format,
+      colour = dtag(palette.accent),
+      format = "l13b",
     },
     message = {
-      colour = string.format("<%s>", table.concat(color_table.sea_green, ",")),
-    }
+      colour = dtag(palette.message),
+    },
+    intro = dtag(palette.accent) .. __PKGNAME__.config.intro,
   }
 end
 
@@ -306,11 +337,8 @@ function __PKGNAME__.buildUi()
     locked = false,
     titleText = "",
 
-    adjLabelstyle = "background-color:rgba(18,22,25,100%); border: 1px solid rgb(18,22,25);",
-    buttonstyle = [[
-      QLabel{ border-radius: 7px; background-color: rgba(32,38,45,50%);}
-      QLabel::hover{ background-color: rgba(30,38,45,100%);}
-      ]],
+    adjLabelstyle = __PKGNAME__.style.window.adjLabel,
+    buttonstyle = __PKGNAME__.style.window.button,
     buttonFontSize = 10,
     buttonsize = 20,
   })
@@ -359,7 +387,7 @@ function __PKGNAME__.buildUi()
   -- This the label that contains all of the miniconsoles
   __PKGNAME__.Body = __PKGNAME__.Body or Geyser.Label:new({
     name = "__PKGNAME__.Body",
-    stylesheet = "background-color:rgba(18,22,25,100%);",
+    stylesheet = __PKGNAME__.style.body.background,
     x = 0,
     width = "100%",
   }, __PKGNAME__.Container)
@@ -499,13 +527,16 @@ function __PKGNAME__.setFontSize(size)
     return
   end
 
+  local limits = __PKGNAME__.config.font_size
+  font_size = math.floor(glu.number.clamp(font_size, limits.min, limits.max))
+
   for _, tab in pairs(__PKGNAME__.tabs) do
     tab.console:setFontSize(font_size)
   end
   __PKGNAME__.prefs.size = font_size
   __PKGNAME__.savePrefs()
 
-  cecho("__PKGNAME__ font size set to <b>" .. tostring(size) .. "</b>.\n")
+  cecho("__PKGNAME__ font size set to <b>" .. tostring(font_size) .. "</b>.\n")
 end
 
 function __PKGNAME__.addChannel(channel, group)
@@ -624,58 +655,61 @@ function __PKGNAME__.listChannels(group)
   end
 end
 
-function __PKGNAME__.fade(widget, direction, immediate)
-  local tab_styles = __PKGNAME__.style.tabs
-  local widget_name = widget.name
+--- Returns `count` colours stepping from `from` to `to`, ending exactly on `to`.
+function __PKGNAME__.fadeSteps(from, to, count)
+  local steps = {}
 
-  local curr_fg, target_fg, curr_bg, target_bg
+  for i = 1, count - 1 do
+    steps[i] = glu.colour.interpolate(from, to, i * 100 / count)
+  end
+  steps[count] = { to[1], to[2], to[3] }
+
+  return steps
+end
+
+function __PKGNAME__.tabStyle(state, fg, bg)
+  return __PKGNAME__.style.tabs[state] ..
+      " color: " .. __PKGNAME__.css(fg) ..
+      "; background-color: " .. __PKGNAME__.css(bg) .. ";"
+end
+
+function __PKGNAME__.fadeTimerName(widget)
+  return "__PKGNAME__:Fade_" .. widget.name
+end
+
+function __PKGNAME__.fade(widget, direction, immediate)
+  local colours = __PKGNAME__.style.tabs.colours
+  local from, to
 
   if direction == "in" then
-    curr_fg = tab_styles.colours.fg.unselected
-    target_fg = tab_styles.colours.fg.selected
-    curr_bg = tab_styles.colours.bg.unselected
-    target_bg = tab_styles.colours.bg.selected
+    from, to = "unselected", "selected"
   elseif direction == "out" then
-    curr_fg = tab_styles.colours.fg.selected
-    target_fg = tab_styles.colours.fg.unselected
-    curr_bg = tab_styles.colours.bg.selected
-    target_bg = tab_styles.colours.bg.unselected
+    from, to = "selected", "unselected"
   else
     return
   end
 
-  local delay = .025
-  local step = immediate and 100 or 5
-  local state = 0
+  local timer_name = __PKGNAME__.fadeTimerName(widget)
+  glu.timer.kill_multi(timer_name)
 
-  local timer_name = "__PKGNAME__:Fade_" .. widget_name
-  if table.index_of(getNamedTimers("__PKGNAME__"), timer_name) then
-    deleteNamedTimer("__PKGNAME__", timer_name)
+  if immediate then
+    widget:setStyle(__PKGNAME__.tabStyle(to, colours.fg[to], colours.bg[to]))
+    return
   end
 
-  registerNamedTimer("__PKGNAME__", timer_name, delay, function()
-    state = state + step
-    local style_string
-    local fg_colour_string, bg_colour_string
-    if state >= 100 then
-      style_string = __PKGNAME__.style.tabs.selected
-      fg_colour_string = "rgb(" .. table.concat(target_fg, ",") .. ")"
-      bg_colour_string = "rgb(" .. table.concat(target_bg, ",") .. ")"
-    else
-      curr_fg = glu.colour.interpolate(curr_fg, target_fg, state)
-      curr_bg = glu.colour.interpolate(curr_bg, target_bg, state)
-      style_string = __PKGNAME__.style.tabs.unselected
-      fg_colour_string = "rgb(" .. table.concat(curr_fg, ",") .. ")"
-      bg_colour_string = "rgb(" .. table.concat(curr_bg, ",") .. ")"
-    end
+  local fg = __PKGNAME__.fadeSteps(colours.fg[from], colours.fg[to], 20)
+  local bg = __PKGNAME__.fadeSteps(colours.bg[from], colours.bg[to], 20)
 
-    local style = style_string .. " color: " .. fg_colour_string .. "; background-color: " .. bg_colour_string .. ";"
-    widget:setStyle(style)
+  local steps = {}
+  for i = 1, #fg do
+    steps[i] = {
+      func = function()
+        widget:setStyle(__PKGNAME__.tabStyle(to, fg[i], bg[i]))
+      end
+    }
+  end
 
-    if state >= 100 then
-      deleteNamedTimer("__PKGNAME__", timer_name)
-    end
-  end, true)
+  glu.timer.multi(timer_name, steps, 0.025)
 end
 
 function __PKGNAME__.click(tab_name, force)
@@ -794,6 +828,9 @@ function __PKGNAME__.uninstall(event, package)
   if package ~= "__PKGNAME__" then return end
 
   deleteAllNamedTimers("__PKGNAME__")
+  for _, tab in pairs(__PKGNAME__.tabs or {}) do
+    if tab.tab then glu.timer.kill_multi(__PKGNAME__.fadeTimerName(tab.tab)) end
+  end
   deleteAllNamedEventHandlers("__PKGNAME__")
   removeMouseEvent("Clear Console")
   __PKGNAME__.dismantleUi()
