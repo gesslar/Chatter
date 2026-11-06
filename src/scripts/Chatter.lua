@@ -24,7 +24,7 @@ __PKGNAME__ = __PKGNAME__ or {
     },
     -- Every colour in the UI is derived from these.
     palette = {
-      base = { 18, 22, 25 },  -- window and console background
+      base = { 18, 22, 25 },  -- window and body background
       tab = { 0, 50, 0 },     -- tab bar and unselected tabs
       accent = { 82, 100, 0 }, -- selected tab, title, and intro
       message = color_table.sea_green, -- status messages in the main console
@@ -57,8 +57,10 @@ end
 --- Formats an RGB table for a Qt stylesheet. Without alpha, this is a hex
 --- colour; with alpha (0-100), it is an rgba() value.
 function __PKGNAME__.css(rgb, alpha)
+  -- to_hex also validates the colour, so both forms reject a bad one.
+  local hex = glu.colour.to_hex(rgb)
   if alpha == nil then
-    return glu.colour.to_hex(rgb)
+    return hex
   end
 
   return "rgba(" .. table.concat(rgb, ",") .. "," .. alpha .. "%)"
@@ -74,19 +76,20 @@ function __PKGNAME__.receiveComm(event)
   -- Replace line breaks with spaces, to wrap!
   text = rex.gsub(text, "[\\r\\n]", " ") --[[@as string]]
 
+  text = __PKGNAME__.style.console.default_fg .. text .. "\n"
   if __PKGNAME__.config.enable_intro == true then
-    text = __PKGNAME__.style.intro .. "<r> " .. text .. "\n"
-  else
-    text = __PKGNAME__.style.console.default_fg .. text .. "\n"
+    text = __PKGNAME__.style.intro .. "<r> " .. text
   end
 
-  local group, groups = __PKGNAME__.groups[channel], {}
+  -- Everything goes to "all". A channel grouped under "all" itself, or under
+  -- a group with no tab, has nowhere else to go.
+  local group, groups = __PKGNAME__.groups[channel], { "all" }
   if group then
-    if not group.muted then
-      groups = { "all", group.group }
+    if group.muted then
+      groups = {}
+    elseif group.group ~= "all" and __PKGNAME__.tabs[group.group] then
+      groups[#groups + 1] = group.group
     end
-  else
-    groups = { "all" }
   end
 
   __PKGNAME__.echo(groups, text)
@@ -166,6 +169,10 @@ function __PKGNAME__.loadPrefs()
     __PKGNAME__.config.defaults
   )
 
+  -- A size saved before the limits existed may lie outside them.
+  local size = tonumber(__PKGNAME__.prefs.size) or __PKGNAME__.config.defaults.size
+  __PKGNAME__.prefs.size = __PKGNAME__.clampFontSize(size)
+
   __PKGNAME__.savePrefs()
 end
 
@@ -177,40 +184,39 @@ function __PKGNAME__.savePrefs()
   )
 end
 
-function __PKGNAME__.show()
-  if __PKGNAME__.MainWindow then
-    if __PKGNAME__.MainWindow.hidden then
-      __PKGNAME__.MainWindow:show()
-      if not __PKGNAME__.MainWindow.hidden then
-        decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window shown.\n")
-        __PKGNAME__.MainWindow:save()
-      else
-        decho(__PKGNAME__.style.message.colour .. "Unable to show __PKGNAME__ window.\n")
-      end
-    else
-      decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window is already visible.\n")
-    end
+--- Moves the window into a state, reporting the outcome and saving on success.
+--- `field` is the window flag that reflects the state, and `target` the value
+--- it holds once the window is there.
+local function changeWindowState(field, target, method, verb, done, already)
+  local window = __PKGNAME__.MainWindow
+  local colour = __PKGNAME__.style.message.colour
+
+  if not window then
+    decho(colour .. "Unable to " .. verb .. " __PKGNAME__ window.\n")
+    return
+  end
+
+  if (window[field] and true or false) == target then
+    decho(colour .. "__PKGNAME__ window is already " .. already .. ".\n")
+    return
+  end
+
+  window[method](window)
+
+  if (window[field] and true or false) == target then
+    decho(colour .. "__PKGNAME__ window " .. done .. ".\n")
+    window:save()
   else
-    decho(__PKGNAME__.style.message.colour .. "Unable to show __PKGNAME__ window.\n")
+    decho(colour .. "Unable to " .. verb .. " __PKGNAME__ window.\n")
   end
 end
 
+function __PKGNAME__.show()
+  changeWindowState("hidden", false, "show", "show", "shown", "visible")
+end
+
 function __PKGNAME__.hide()
-  if __PKGNAME__.MainWindow then
-    if not __PKGNAME__.MainWindow.hidden then
-      __PKGNAME__.MainWindow:hide()
-      if __PKGNAME__.MainWindow.hidden then
-        decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window hidden.\n")
-        __PKGNAME__.MainWindow:save()
-      else
-        decho(__PKGNAME__.style.message.colour .. "Unable to hide __PKGNAME__ window.\n")
-      end
-    else
-      decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window is already hidden.\n")
-    end
-  else
-    decho(__PKGNAME__.style.message.colour .. "Unable to hide __PKGNAME__ window.\n")
-  end
+  changeWindowState("hidden", true, "hide", "hide", "hidden", "hidden")
 end
 
 function __PKGNAME__.toggle()
@@ -232,75 +238,19 @@ function __PKGNAME__.flash()
 end
 
 function __PKGNAME__.minimize()
-  if __PKGNAME__.MainWindow then
-    if not __PKGNAME__.MainWindow.minimized then
-      __PKGNAME__.MainWindow:minimize()
-      if __PKGNAME__.MainWindow.minimized then
-        decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window minimized.\n")
-        __PKGNAME__.MainWindow:save()
-      else
-        decho(__PKGNAME__.style.message.colour .. "Unable to minimize __PKGNAME__ window.\n")
-      end
-    else
-      decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window is already minimized.\n")
-    end
-  else
-    decho(__PKGNAME__.style.message.colour .. "Unable to minimize __PKGNAME__ window.\n")
-  end
+  changeWindowState("minimized", true, "minimize", "minimize", "minimized", "minimized")
 end
 
 function __PKGNAME__.restore()
-  if __PKGNAME__.MainWindow then
-    if __PKGNAME__.MainWindow.minimized then
-      __PKGNAME__.MainWindow:restore()
-      if not __PKGNAME__.MainWindow.minimized then
-        decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window restored.\n")
-        __PKGNAME__.MainWindow:save()
-      else
-        decho(__PKGNAME__.style.message.colour .. "Unable to restore __PKGNAME__ window.\n")
-      end
-    else
-      decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window is already restored.\n")
-    end
-  else
-    decho(__PKGNAME__.style.message.colour .. "Unable to restore __PKGNAME__ window.\n")
-  end
+  changeWindowState("minimized", false, "restore", "restore", "restored", "restored")
 end
 
 function __PKGNAME__.lock()
-  if __PKGNAME__.MainWindow then
-    if not __PKGNAME__.MainWindow.locked then
-      __PKGNAME__.MainWindow:lockContainer()
-      if __PKGNAME__.MainWindow.locked then
-        decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window locked.\n")
-        __PKGNAME__.MainWindow:save()
-      else
-        decho(__PKGNAME__.style.message.colour .. "Unable to lock __PKGNAME__ window.\n")
-      end
-    else
-      decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window is already locked.\n")
-    end
-  else
-    decho(__PKGNAME__.style.message.colour .. "Unable to lock __PKGNAME__ window.\n")
-  end
+  changeWindowState("locked", true, "lockContainer", "lock", "locked", "locked")
 end
 
 function __PKGNAME__.unlock()
-  if __PKGNAME__.MainWindow then
-    if __PKGNAME__.MainWindow.locked then
-      __PKGNAME__.MainWindow:unlockContainer()
-      if not __PKGNAME__.MainWindow.locked then
-        decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window unlocked.\n")
-        __PKGNAME__.MainWindow:save()
-      else
-        decho(__PKGNAME__.style.message.colour .. "Unable to unlock __PKGNAME__ window.\n")
-      end
-    else
-      decho(__PKGNAME__.style.message.colour .. "__PKGNAME__ window is already unlocked.\n")
-    end
-  else
-    decho(__PKGNAME__.style.message.colour .. "Unable to unlock __PKGNAME__ window.\n")
-  end
+  changeWindowState("locked", false, "unlockContainer", "unlock", "unlocked", "unlocked")
 end
 
 function __PKGNAME__.isLocked()
@@ -327,6 +277,48 @@ function __PKGNAME__.saveGroups()
   glu.preferences.save(nil, "__PKGNAME__.Groups.lua", __PKGNAME__.groups)
 end
 
+--- Makes each label in the window's right click menu show its nest properly:
+---
+--- * [Mudlet 5.1.0-5.1.1 workaround, see the WORKAROUND block below]
+---   Hiding and showing the window leaves the items of every closed submenu
+---   flagged auto_hidden (Geyser.Label:show(true) stops at a hidden nest
+---   parent), and show() never draws an auto_hidden label. A label displaying
+---   its nest is visible, so its items' flag is stale and is cleared first.
+--- * The menu is built before the tab consoles, which then draw over the items
+---   that open on top of them, so the items are raised once displayed.
+---
+--- Wrapped once per label, since buildUi may run on a surviving window.
+function __PKGNAME__.patchMenu(label)
+  if not label.__PKGNAME__Patched then
+    label.__PKGNAME__Patched = true
+
+    local displayNest = label.displayNest
+    function label:displayNest(...)
+      -- WORKAROUND(Mudlet 5.1.0-5.1.1): remove from here...
+      -- Geyser regressed in Mudlet/Mudlet#11714 and is fixed by
+      -- Mudlet/Mudlet#12460. Once a release carrying that fix is the oldest
+      -- Mudlet Chatter supports, delete this block, its bullet above, and the
+      -- two auto_hidden specs under "patchMenu" in chatter_spec.lua.
+      if not (self.hidden or self.auto_hidden) then
+        for _, item in ipairs(self.nestedLabels or {}) do
+          item.auto_hidden = false
+        end
+      end
+      -- WORKAROUND(Mudlet 5.1.0-5.1.1): ...to here.
+
+      local result = displayNest(self, ...)
+      for _, item in ipairs(self.nestedLabels or {}) do
+        item:raise()
+      end
+      return result
+    end
+  end
+
+  for _, item in pairs(label.MenuLabels or {}) do
+    __PKGNAME__.patchMenu(item)
+  end
+end
+
 function __PKGNAME__.buildUi()
   __PKGNAME__.MainWindow = __PKGNAME__.MainWindow or Adjustable.Container:new({
     name = "__PKGNAME__.MainWindow",
@@ -348,6 +340,10 @@ function __PKGNAME__.buildUi()
     __PKGNAME__.style.title.format
   )
   __PKGNAME__.addWidget(__PKGNAME__.MainWindow)
+  __PKGNAME__.patchMenu(__PKGNAME__.MainWindow.rCLabel)
+  -- The container has just restored its saved layout. Keep it out of sight
+  -- while it's built, then honour whether that layout had it hidden.
+  local start_hidden = __PKGNAME__.MainWindow.hidden
   __PKGNAME__.MainWindow:hide()
 
   -- This is the container that holds everything
@@ -403,12 +399,12 @@ function __PKGNAME__.buildUi()
   end)
 
   -- Create and add the tabs
-  for _, name in pairs(names) do
+  for _, name in ipairs(names) do
     local display_name = __PKGNAME__.config.category.type[name].display
 
     -- Create the tab
     __PKGNAME__.tabs[name] = __PKGNAME__.tabs[name] or {}
-    __PKGNAME__.tabs[name].tab = Geyser.Button:new({
+    __PKGNAME__.tabs[name].tab = __PKGNAME__.tabs[name].tab or Geyser.Button:new({
       name = "__PKGNAME__.Tabs." .. name,
       msg = display_name,
       tooltip = __PKGNAME__.config.category.type[name].tooltip,
@@ -438,19 +434,18 @@ function __PKGNAME__.buildUi()
     __PKGNAME__.tabs[name].console:hide()
   end
 
-  __PKGNAME__.MainWindow:show()
+  if not start_hidden then
+    __PKGNAME__.MainWindow:show()
+  end
   -- Show the default tab
   __PKGNAME__.click("all", true)
 end
 
 function __PKGNAME__.dismantleUi()
   for _, v in pairs(__PKGNAME__.widget or {}) do
-    if v ~= nil then
-      -- We will do this last.
-      if v.name ~= "__PKGNAME__.MainWindow" then
-        v:hide()
-        v = nil
-      end
+    -- We will do this last.
+    if v.name ~= "__PKGNAME__.MainWindow" then
+      v:hide()
     end
   end
   __PKGNAME__.widget = nil
@@ -520,6 +515,12 @@ function __PKGNAME__.command(_, input)
   end
 end
 
+--- Clamps a font size to the configured limits, rounding down.
+function __PKGNAME__.clampFontSize(size)
+  local limits = __PKGNAME__.config.font_size
+  return math.floor(glu.number.clamp(size, limits.min, limits.max))
+end
+
 function __PKGNAME__.setFontSize(size)
   local font_size = tonumber(size)
   if not font_size then
@@ -527,8 +528,7 @@ function __PKGNAME__.setFontSize(size)
     return
   end
 
-  local limits = __PKGNAME__.config.font_size
-  font_size = math.floor(glu.number.clamp(font_size, limits.min, limits.max))
+  font_size = __PKGNAME__.clampFontSize(font_size)
 
   for _, tab in pairs(__PKGNAME__.tabs) do
     tab.console:setFontSize(font_size)
@@ -628,11 +628,15 @@ function __PKGNAME__.listChannels(group)
       function(k, v) return v.group end
     )
     groups = glu.table.n_distinct(group_names)
-  else
+    table.sort(groups)
+  elseif __PKGNAME__.config.category.type[group] then
     groups = { group }
+  else
+    echo("Invalid group: " .. group .. "\n")
+    return
   end
 
-  for _, g in spairs(groups) do
+  for _, g in ipairs(groups) do
     local channels = {}
     for channel, element in pairs(__PKGNAME__.groups) do
       if element.group == g then
@@ -674,7 +678,7 @@ function __PKGNAME__.tabStyle(state, fg, bg)
 end
 
 function __PKGNAME__.fadeTimerName(widget)
-  return "__PKGNAME__:Fade_" .. widget.name
+  return "Fade_" .. widget.name
 end
 
 function __PKGNAME__.fade(widget, direction, immediate)
@@ -690,7 +694,7 @@ function __PKGNAME__.fade(widget, direction, immediate)
   end
 
   local timer_name = __PKGNAME__.fadeTimerName(widget)
-  glu.timer.kill_multi(timer_name)
+  deleteNamedTimer("__PKGNAME__", timer_name)
 
   if immediate then
     widget:setStyle(__PKGNAME__.tabStyle(to, colours.fg[to], colours.bg[to]))
@@ -700,16 +704,14 @@ function __PKGNAME__.fade(widget, direction, immediate)
   local fg = __PKGNAME__.fadeSteps(colours.fg[from], colours.fg[to], 20)
   local bg = __PKGNAME__.fadeSteps(colours.bg[from], colours.bg[to], 20)
 
-  local steps = {}
-  for i = 1, #fg do
-    steps[i] = {
-      func = function()
-        widget:setStyle(__PKGNAME__.tabStyle(to, fg[i], bg[i]))
-      end
-    }
-  end
-
-  glu.timer.multi(timer_name, steps, 0.025)
+  local step = 0
+  registerNamedTimer("__PKGNAME__", timer_name, 0.025, function()
+    step = step + 1
+    widget:setStyle(__PKGNAME__.tabStyle(to, fg[step], bg[step]))
+    if step >= #fg then
+      deleteNamedTimer("__PKGNAME__", timer_name)
+    end
+  end, true)
 end
 
 function __PKGNAME__.click(tab_name, force)
@@ -781,12 +783,6 @@ function __PKGNAME__.registerEventHandlers()
   )
   registerNamedEventHandler(
     "__PKGNAME__",
-    "Uninstall",
-    "sysUninstall",
-    __PKGNAME__.uninstall
-  )
-  registerNamedEventHandler(
-    "__PKGNAME__",
     "command",
     "__PKGNAME__:command",
     __PKGNAME__.command
@@ -800,9 +796,6 @@ end
 -- This connection handler announces to Threshold that we would like to receive
 -- Comm GMCP information
 function __PKGNAME__.connectionScript()
-  __PKGNAME__.unregisterEventHandlers()
-  __PKGNAME__.registerEventHandlers()
-
   if not resumeNamedTimer("__PKGNAME__", "ConnectionTimer") then
     registerNamedTimer("__PKGNAME__", "ConnectionTimer", 1, function()
       sendGMCP([[Core.Supports.Add ["Comm 1"] ]])
@@ -820,7 +813,7 @@ function __PKGNAME__.clearConsole(event, menu, window, startCol, startRow, endCo
     end
   end
 
-  cecho("<sea_green>That is not a Chatter console.\n<r>")
+  decho(__PKGNAME__.dtag(__PKGNAME__.config.palette.message) .. "That is not a __PKGNAME__ console.\n")
 end
 
 -- This is the uninstall routine. Cleans everything up!
@@ -828,12 +821,12 @@ function __PKGNAME__.uninstall(event, package)
   if package ~= "__PKGNAME__" then return end
 
   deleteAllNamedTimers("__PKGNAME__")
-  for _, tab in pairs(__PKGNAME__.tabs or {}) do
-    if tab.tab then glu.timer.kill_multi(__PKGNAME__.fadeTimerName(tab.tab)) end
-  end
   deleteAllNamedEventHandlers("__PKGNAME__")
-  removeMouseEvent("Clear Console")
+  removeMouseEvent("__PKGNAME__ Clear Console")
   __PKGNAME__.dismantleUi()
+  -- Drop the cached module so a reinstall loads the Glu it ships with.
+  -- (`package` is our argument here, hence _G.)
+  _G.package.loaded["__PKGNAME__/vendor/Glu-single"] = nil
   cecho("<red>[__PKGNAME__]<r> You have uninstalled __PKGNAME__.\n")
   __PKGNAME__ = nil
 end
@@ -841,17 +834,14 @@ end
 function __PKGNAME__.start(event, package)
   if package and package ~= "__PKGNAME__" then return end
 
-  local _, _, connected = getConnectionInfo()
-
+  -- Handlers go in only once the UI exists, in the callback below, as they
+  -- echo to it.
   if event == "sysInstall" then
     if package ~= "__PKGNAME__" then return end
 
     __PKGNAME__.first_time = true
 
     deleteNamedEventHandler("__PKGNAME__", "install")
-    if connected then
-      __PKGNAME__.connectionScript()
-    end
   end
 
   local deps = glu.dependency_queue(
@@ -872,8 +862,8 @@ function __PKGNAME__.start(event, package)
       __PKGNAME__.buildUi()
       __PKGNAME__.registerEventHandlers()
 
-      local _, _, connected2 = getConnectionInfo()
-      if connected2 then
+      local _, _, connected = getConnectionInfo()
+      if connected then
         __PKGNAME__.connectionScript()
       end
 
@@ -949,8 +939,17 @@ registerNamedEventHandler(
   function(_) __PKGNAME__.start(_, "__PKGNAME__") end
 )
 
+-- Registered here rather than once dependencies load, so an uninstall before
+-- or without them still cleans up.
+registerNamedEventHandler(
+  "__PKGNAME__",
+  "Uninstall",
+  "sysUninstall",
+  __PKGNAME__.uninstall
+)
+
 addMouseEvent(
-  "Clear Console",
+  "__PKGNAME__ Clear Console",
   "__PKGNAME__:ClearConsole",
   "Clear Console",
   "Clear the entire history of this console"
